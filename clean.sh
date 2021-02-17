@@ -1,0 +1,1 @@
+rm -rf objectFiles/*.o out.out out.mk automake/HeaderFiles.json
