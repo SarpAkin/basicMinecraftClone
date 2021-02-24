@@ -10,7 +10,9 @@
 static_assert("ASSERT is defined!\n");
 #endif
 
-#define DEBUG
+#ifndef DEBUG
+    static_assert("Not in the DEBUG mode!\n");
+#endif
 
 #ifdef DEBUG
 #define ASSERT(x) assert(x);

@@ -4,7 +4,7 @@
 
 
 
-VertexBuffer::VertexBuffer(const void* data, std::size_t size)
+void  VertexBuffer::Construct(const void* data, std::size_t size)
 {
     GLCALL(glGenBuffers(1, &bufferID));
     GLCALL(glBindBuffer(GL_ARRAY_BUFFER, bufferID));

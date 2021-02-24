@@ -57,7 +57,7 @@ struct Vertex
 
 
 
-class TestRen : public Renderer
+class TestRen_ : public Renderer
 {
 
     VertexBuffer vb;
@@ -189,7 +189,7 @@ int main_()
 {
 
 
-    TestRen t;
+    TestRen_ t;
     if (t.Construct())
         t.Start();
     else

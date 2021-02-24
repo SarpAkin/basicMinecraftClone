@@ -1,0 +1,6 @@
+.vscode
+out.out
+out.mk
+**.o
+automake/HeaderFiles.json
+**__pycache__

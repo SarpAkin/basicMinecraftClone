@@ -6,6 +6,8 @@
 
 #include "opengl_.h"
 
+uint32_t ActiveShader = 0;
+
 
 uint32_t CreateShader(const std::string& vertexShader, const std::string& fragmentShader);
 
@@ -21,12 +23,16 @@ Shader::Shader(std::string&& vertexShader, std::string&& fragmentShader)
 
 Shader::~Shader()
 {
+
     if (shaderID)
         GLCALL(glDeleteProgram(shaderID));
 }
 
 void Shader::Bind() const
 {
+    #ifdef DEBUG
+    ActiveShader = shaderID;
+    #endif
     GLCALL(glUseProgram(shaderID));
 }
 
@@ -52,6 +58,10 @@ void Shader::SetUniformMat4(std::string& uniform, glm::mat4 v0)
 
 int Shader::getUniformLocation(std::string& uniformName)
 {
+    #ifdef DEBUG 
+    assert(ActiveShader == shaderID);//shader hesn't bound;
+    #endif
+
     auto it = uniformLocation.find(uniformName);
     if (it != uniformLocation.end())
     {

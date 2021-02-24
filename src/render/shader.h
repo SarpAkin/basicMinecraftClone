@@ -10,7 +10,7 @@
 class Shader
 {
 private:
-    uint32_t shaderID;
+    uint32_t shaderID = 0;
     std::unordered_map<std::string, int> uniformLocation;
 private:
     int getUniformLocation(std::string&);
@@ -30,7 +30,7 @@ public:
     void SetUniformMat4(std::string& uniform, glm::mat4 v0);
 
     inline Shader(Shader&& other){shaderID = other.shaderID;other.shaderID = 0;}
-    inline void operator =(Shader&& other){shaderID = other.shaderID;other.shaderID = 0;}
+    inline void operator =(Shader&& other){this->~Shader();uniformLocation = std::move(other.uniformLocation);shaderID = other.shaderID;other.shaderID = 0;}
 
 
     inline void SetUniform4f(const char* uniform, float v0, float v1, float v2, float v3)
