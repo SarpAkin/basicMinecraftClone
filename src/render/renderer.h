@@ -1,23 +1,35 @@
 #pragma once
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <unordered_map>
+#include <glm/glm.hpp>
 #include <functional>
 #include <memory>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include "opengl_.h"
 
-#include "IndexBuffer.h"
-#include "VertexBuffer.h"
-#include "VertexArray.h"
 #include "VertexBufferLayout.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
+#include "VertexArray.h"
 #include "shader.h"
+
 
 class Renderer
 {
 private:
     GLFWwindow* window;
     bool isRunning = false;
+protected:
+    int width;
+    int height;
+public:
+    static double MouseXRaw;
+    static double MouseYRaw;
+    static std::unordered_map<int, bool> keyMap;
+private:
+    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 
 protected:
     virtual void OnStart();
@@ -27,24 +39,11 @@ public:
     Renderer() = default;
     virtual ~Renderer();
 
-    bool Construct(int width = 640,int height = 480);
+    bool Construct(int width = 640, int height = 480);
     bool Start();
 
-    void Draw(const VertexArray& va,const IndexBuffer& ib,const Shader& shader);
-    void DrawU16(const VertexArray& va,const IndexBuffer& ib,const Shader& shader);
+    void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader);
+    void DrawU16(const VertexArray& va, const IndexBuffer& ib, const Shader& shader);
 };
 
-class renderer_
-{
-private:
-    std::unique_ptr<Renderer> renderer;
-public:
-    renderer_(std::unique_ptr<Renderer> r_);
-    ~renderer_();
-
-    inline Renderer& getRenderer()
-    {
-        return *renderer;
-    }
-};
 

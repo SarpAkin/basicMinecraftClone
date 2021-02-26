@@ -106,14 +106,30 @@ VertexBufferLayout ChunkMeshGPU::vlayout;
 Shader ChunkMeshGPU::chunkShader;
 Texture ChunkMeshGPU::atlas;
 
+Vector2 rotateVectorInRadians(Vector2 v,float radian)
+{
+    Vector2 retV;
+    retV.x = v.x * cos(radian) - v.y * sin(radian);
+    retV.y = v.x * sin(radian) + v.y * cos(radian);
+    return retV;
+}
+
+inline Vector2 rotateVectorIndegrees(Vector2 v,float radian)
+{
+    return rotateVectorInRadians(v,glm::radians(radian));
+}
+
 class TestRen : public Renderer
 {
 
 
     ChunkMeshGPU mesh;
     glm::mat4 proj;
-    glm::mat4 view;
 
+    Vector3 viewPos;
+    float pitch = 90;
+    float yaw = 0;
+    const float speed = 10.0f; 
 public:
     TestRen()
     {
@@ -122,11 +138,12 @@ public:
     void OnStart() override
     {
         proj = glm::perspective(glm::radians(90.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+        /*
         view = glm::lookAt(
-            glm::vec3(0, 10, 0), // Camera is at (4,3,3), in World Space
+            glm::vec3(8, 3, 8), // Camera is at (4,3,3), in World Space
             glm::vec3(0, 0, 0), // and looks at the origin
             glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-        );
+        );*/
 
         Chunk c;
         for (int x = 0; x < 16; ++x)
@@ -142,23 +159,47 @@ public:
     }
     float x_cord = 0;
     int sign = 1;
+
     void OnUpdate(double DeltaT) override
     {
-        x_cord += (float)DeltaT * sign;
-        if (x_cord > 5)
-        {
-            sign = -sign;
-        }
-        else if (x_cord < -5)
-        {
-            sign = -sign;
-        }
-        view = glm::lookAt(
-            glm::vec3(x_cord + 8, 3 - x_cord, -x_cord/2 + 8), // Camera is at (4,3,3), in World Space
-            glm::vec3(0, -1, 0), // and looks at the origin
-            glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-        );
-        mesh.Draw(proj * view);
+
+        pitch += -MouseYRaw;
+        yaw += MouseXRaw;
+
+        if (pitch > 89)
+            pitch = 89;
+        else if (pitch < -89)
+            pitch = -89;
+
+        //yaw = fmod(yaw,360.0f);
+        Vector3 DirVector;
+        DirVector.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+        DirVector.y = sin(glm::radians(pitch));
+        DirVector.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+        Vector3 MoveVector = Vector3(0,0,0);
+        if (keyMap[GLFW_KEY_A])
+            MoveVector.z -= 1;
+        if (keyMap[GLFW_KEY_D])
+            MoveVector.z += 1;
+        if (keyMap[GLFW_KEY_W])
+            MoveVector.x += 1;
+        if (keyMap[GLFW_KEY_S])
+            MoveVector.x -= 1;
+        if (keyMap[GLFW_KEY_SPACE])
+            MoveVector.y += 1;
+        if (keyMap[GLFW_KEY_LEFT_CONTROL])
+            MoveVector.y -= 1;
+        
+        Vector2 v2 = rotateVectorIndegrees(Vector2(MoveVector.x,MoveVector.z),yaw);
+        MoveVector.x = v2.x;
+        MoveVector.z = v2.y;
+        std::cout << MoveVector.x << ' ' << MoveVector.z << '\n';
+        viewPos += MoveVector * (float)DeltaT * speed;
+
+        mesh.Draw(proj * glm::lookAt(viewPos, viewPos + DirVector, Vector3(0, 1, 0)));
+        MouseXRaw = 0;
+        MouseYRaw = 0;
     }
 };
 

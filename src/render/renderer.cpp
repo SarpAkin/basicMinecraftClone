@@ -2,6 +2,10 @@
 
 #include "renderer.h"
 
+std::unordered_map<int, bool> Renderer::keyMap;
+double Renderer::MouseXRaw;
+double Renderer::MouseYRaw;
+
 void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader)
 {
     va.Bind();
@@ -18,9 +22,26 @@ void Renderer::DrawU16(const VertexArray& va, const IndexBuffer& ib, const Shade
     GLCALL(glDrawElements(GL_TRIANGLES, ib.size / sizeof(uint16_t), GL_UNSIGNED_SHORT, nullptr));
 }
 
-
-bool Renderer::Construct(int width, int height)
+void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    Renderer::keyMap[key] = action;
+    //std::cout << action << ' ' << key << '\n';
+}
+
+double oldxpos = 0;
+double oldypos = 0;
+void Renderer::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    MouseXRaw = xpos - oldxpos;
+    MouseYRaw = ypos - oldypos;
+    oldxpos = xpos;
+    oldypos = ypos;
+}
+
+bool Renderer::Construct(int width_, int height_)
+{
+    width = width_;
+    height = height_;
 
     /* Initialize the library */
     if (!glfwInit())
@@ -55,6 +76,15 @@ bool Renderer::Construct(int width, int height)
     // Accept fragment if it closer to the camera than the former one
     GLCALL(glDepthFunc(GL_LESS));
 
+    //Get keyboard-mouse input
+    GLCALL(glfwSetKeyCallback(window, key_callback));
+    GLCALL(glfwSetCursorPosCallback(window, cursor_position_callback));
+
+    GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
+    if (glfwRawMouseMotionSupported())
+    {
+        GLCALL(glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE));
+    }
     OnStart();
 
     std::cout << glGetString(GL_VERSION) << '\n';
@@ -71,8 +101,6 @@ bool Renderer::Start()
         s = std::chrono::steady_clock::now();
         auto dur = s - e;
         uint64_t dur_ = dur.count();
-
-
 
 
         /* Render here */
@@ -95,17 +123,6 @@ bool Renderer::Start()
 Renderer::~Renderer()
 {
     OnDestroy();
-}
-
-renderer_::renderer_(std::unique_ptr<Renderer> r_)
-{
-    renderer = std::move(r_);
-}
-
-renderer_::~renderer_()
-{
-    renderer = nullptr;
-    GLCALL(glfwTerminate());
 }
 
 
