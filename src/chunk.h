@@ -6,6 +6,7 @@
 #include <array>
 
 #include "vectors.h"
+#include "hasher.h"
 #include "tile.h"
 
 const int chunk_size = 16;
@@ -26,6 +27,11 @@ struct ChunkVertex
 {
     Vector3 pos;
     Vector2 textpos;
+    inline ChunkVertex()
+    {
+        pos = { 0,0,0 };
+        textpos = { 0,0 };
+    }
     inline ChunkVertex(Vector3 pos_, Vector2 textpos_)
     {
         pos = pos_;textpos = textpos_;
@@ -34,8 +40,8 @@ struct ChunkVertex
 
 struct VerticalChunkMesh
 {
-    std::vector<ChunkVertex> verticies;
-    std::vector<uint16_t> indicies;
+    std::vector<ChunkVertex> verticies = std::vector<ChunkVertex>(0);
+    std::vector<uint16_t> indicies = std::vector<uint16_t>(0);
     void addSquare(Vector3Int pos, direction facing, uint16_t textureID);
 
     inline void reserverSquares(size_t amount)
@@ -70,14 +76,15 @@ class Chunk
     };
 
 private:
-    Vector2 pos;
+
     std::array<std::unique_ptr<std::array<Tile, chunk_volume>>, vertical_chunk_count> grid;
 
     Chunk* northernChunk = nullptr; //z+
     Chunk* southernChunk = nullptr; //z-
     Chunk* easternChunk = nullptr; //x+
     Chunk* westernChunk = nullptr; //x-
-
+public:
+    Vector2Int pos;
 private:
     inline void exc()
     {
@@ -85,17 +92,23 @@ private:
     }
 
 
+public:
     /*use [] operator instead of this!*/
     TileRef findBlockInChunk(Vector3Int);
+    /*use [] operator instead of this!*/
     Tile findBlockInChunk(Vector3Int) const;
-public:
+    Chunk() = default;
+    inline Chunk(Vector2Int pos)
+    {
+        this->pos = pos;
+    }
     ~Chunk();
 
     inline Vector2Int getPos()
     {
         return pos;
     }
-    void Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>>& Chunks);
+    void Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>>& Chunks);
     ChunkMesh GenMesh() const;
 
     Tile operator[] (Vector3Int pos) const;

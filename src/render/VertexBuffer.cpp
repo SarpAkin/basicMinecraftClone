@@ -19,5 +19,6 @@ VertexBuffer::~VertexBuffer()
 
 void VertexBuffer::Bind() const
 {
+    va.Bind();
     GLCALL(glBindBuffer(GL_ARRAY_BUFFER, bufferID));
 }

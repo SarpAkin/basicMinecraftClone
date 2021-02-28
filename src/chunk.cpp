@@ -107,38 +107,41 @@ ChunkMesh Chunk::GenMesh() const
     for (int i = 0;i < vertical_chunk_count;++i)
     {
         VerticalChunkMesh& mesh = mesh_.meshes[i];
-        if (grid[i])
-            for (int y = i * chunk_size, y_end = y + chunk_size;y < y_end;++y)
+        if (grid[i] != nullptr)
+        {
+            for (int y = 0;y < chunk_size;++y)
             {
+                int globalY = y + i * chunk_size;
                 for (int x = 0;x < chunk_size;++x)
                 {
                     for (int z = 0;z < chunk_size;++z)
                     {
-                        auto tile = this_[{x, y, z}];
+                        auto tile = this_[{x, globalY, z}];
                         auto textureID = tile.properties().TextureID;
                         if (tile.ID)
                         {
-                            if (this_[{x, y + 1, z}].properties().isTransparent)
+                            if (this_[{x, globalY + 1, z}].properties().isTransparent)
                                 mesh.addSquare({ x,y,z }, direction::up, textureID);
 
-                            if (this_[{x, y - 1, z}].properties().isTransparent)
+                            if (this_[{x, globalY - 1, z}].properties().isTransparent)
                                 mesh.addSquare({ x,y,z }, direction::down, textureID);
 
-                            if (this_[{x, y, z + 1}].properties().isTransparent)
+                            if (this_[{x, globalY, z + 1}].properties().isTransparent)
                                 mesh.addSquare({ x,y,z }, direction::north, textureID);
 
-                            if (this_[{x, y, z - 1}].properties().isTransparent)
+                            if (this_[{x, globalY, z - 1}].properties().isTransparent)
                                 mesh.addSquare({ x,y,z }, direction::south, textureID);
 
-                            if (this_[{x + 1, y, z}].properties().isTransparent)
+                            if (this_[{x + 1, globalY, z}].properties().isTransparent)
                                 mesh.addSquare({ x,y,z }, direction::east, textureID);
 
-                            if (this_[{x - 1, y, z}].properties().isTransparent)
+                            if (this_[{x - 1, globalY, z}].properties().isTransparent)
                                 mesh.addSquare({ x,y,z }, direction::west, textureID);
                         }
                     }
                 }
             }
+        }
     }
     return mesh_;
 }
@@ -154,6 +157,23 @@ Chunk::~Chunk()
         westernChunk->easternChunk = nullptr;
     if (easternChunk)
         easternChunk->westernChunk = nullptr;
+}
+
+void Chunk::Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>>& Chunks)
+{
+    northernChunk = Chunks[pos - Vector2Int(0, 1)].get();
+    southernChunk = Chunks[pos - Vector2Int(0, -1)].get();
+    easternChunk = Chunks[pos - Vector2Int(1, 0)].get();
+    westernChunk = Chunks[pos - Vector2Int(-1, 0)].get();
+
+    if (northernChunk)
+        northernChunk->southernChunk = this;
+    if (southernChunk)
+        southernChunk->northernChunk = this;
+    if (westernChunk)
+        westernChunk->easternChunk = this;
+    if (easternChunk)
+        easternChunk->westernChunk = this;
 }
 
 const int atlasX_size = 16;
@@ -186,43 +206,45 @@ void VerticalChunkMesh::addSquare(Vector3Int pos_, direction facing, uint16_t te
 
 
     case direction::up:
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos +  atlasTileX_Size, 1));//1
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos +  atlasTileX_Size, 0));//2
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(0, 0));//3
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(0, 1));//4
+        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1));//1
+        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0));//2
+        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(atlaspos, 0));//3
+        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(atlaspos, 1));//4
         break;
 
     case direction::down:
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(0, 1));//4
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(0, 0));//3
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(atlaspos +  atlasTileX_Size, 0));//2
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(atlaspos +  atlasTileX_Size, 1));//1
+        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(atlaspos, 1));//4
+        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(atlaspos, 0));//3
+        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0));//2
+        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1));//1
         break;
 
     case direction::east:
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(0, 1));//4
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(0, 0));//3
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos +  atlasTileX_Size, 0));//2
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos +  atlasTileX_Size, 1));//1
+        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(atlaspos, 1));//4
+        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(atlaspos, 0));//3
+        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0));//2
+        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1));//1
+        break;
 
     case direction::west:
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(atlaspos +  atlasTileX_Size, 1));//1
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(atlaspos +  atlasTileX_Size, 0));//2
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(0, 0));//3
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(0, 1));//4
+        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1));//1
+        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0));//2
+        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(atlaspos, 0));//3
+        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(atlaspos, 1));//4
+        break;
 
     case direction::north:
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos +  atlasTileX_Size, 1));//1
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(atlaspos +  atlasTileX_Size, 0));//2
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(0, 0));//3
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(0, 1));//4
+        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1));//1
+        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 0));//2
+        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(atlaspos, 0));//3
+        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(atlaspos, 1));//4
         break;
 
     case direction::south:
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(0, 1));//4
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(0, 0));//3
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(atlaspos +  atlasTileX_Size, 0));//2
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos +  atlasTileX_Size, 1));//1
+        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(atlaspos, 1));//4
+        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(atlaspos, 0));//3
+        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0));//2
+        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 1));//1
         break;
     }
     indicies.push_back(VertexIndex + 0);
@@ -244,6 +266,8 @@ void Chunk::TileRef::operator=(Tile tile)
         else
         {
             s = std::make_unique<std::array<Tile, chunk_volume>>();
+            for (auto& t : *s)
+                t = air;
             (*s)[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)] = tile;
         }
     }

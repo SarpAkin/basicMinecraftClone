@@ -4,13 +4,16 @@
 #include <vector>
 #include <memory>
 
-class VertexArray;
+#include "VertexArray.h"
+
+class VertexBufferLayout;
 
 class VertexBuffer
 {
     friend VertexArray;
 private:
     uint32_t bufferID = 0;
+    VertexArray va = VertexArray(0);
 
 private:
 public:
@@ -22,15 +25,18 @@ public:
     }
     ~VertexBuffer();
 
-    inline VertexBuffer(VertexBuffer&& other) { bufferID = other.bufferID;other.bufferID = 0; }
-    inline void operator =(VertexBuffer&& other) { this->~VertexBuffer();bufferID = other.bufferID;other.bufferID = 0; }
+    inline VertexBuffer(VertexBuffer&& other) { this->~VertexBuffer();va = std::move(other.va);bufferID = other.bufferID;other.bufferID = 0; }
+    inline void operator =(VertexBuffer&& other) { this->~VertexBuffer();va = std::move(other.va);bufferID = other.bufferID;other.bufferID = 0; }
 
 
     template<typename T>
-    inline VertexBuffer(std::vector<T>& vec)
+    inline VertexBuffer(std::vector<T>& vec,const VertexBufferLayout& vl)
     {
+        va = VertexArray();
+        va.Bind();
         if (vec.size())
             Construct(&(vec[0]), vec.size() * sizeof(T));
+        va.AddBuffer(*this,vl);
     }
 
     void Bind() const;

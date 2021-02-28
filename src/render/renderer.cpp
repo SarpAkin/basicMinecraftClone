@@ -2,7 +2,7 @@
 
 #include "renderer.h"
 
-std::unordered_map<int, bool> Renderer::keyMap;
+std::array<uint8_t, KeyCount> Renderer::keyMap;
 double Renderer::MouseXRaw;
 double Renderer::MouseYRaw;
 
@@ -24,7 +24,8 @@ void Renderer::DrawU16(const VertexArray& va, const IndexBuffer& ib, const Shade
 
 void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    Renderer::keyMap[key] = action;
+    if (key < KeyCount)
+        keyMap[key] = action;
     //std::cout << action << ' ' << key << '\n';
 }
 
@@ -80,7 +81,7 @@ bool Renderer::Construct(int width_, int height_)
     GLCALL(glfwSetKeyCallback(window, key_callback));
     GLCALL(glfwSetCursorPosCallback(window, cursor_position_callback));
 
-    GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
+    //GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
     if (glfwRawMouseMotionSupported())
     {
         GLCALL(glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE));
@@ -102,14 +103,12 @@ bool Renderer::Start()
         auto dur = s - e;
         uint64_t dur_ = dur.count();
 
-
         /* Render here */
         GLCALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-        //TODO pass the elapsed time
         OnUpdate((double)dur_ / 1000000000);
-        //GLCALL(glDrawArrays(GL_TRIANGLES, 0, 3));
-        //GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        MouseXRaw = 0;
+        MouseYRaw = 0;
 
         /* Swap front and back buffers */
         GLCALL(glfwSwapBuffers(window));

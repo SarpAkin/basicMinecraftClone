@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <functional>
 #include <memory>
+#include <array>
 
 #include "opengl_.h"
 
@@ -15,6 +16,7 @@
 #include "shader.h"
 
 
+const int KeyCount = GLFW_KEY_LAST + 1;
 class Renderer
 {
 private:
@@ -26,7 +28,7 @@ protected:
 public:
     static double MouseXRaw;
     static double MouseYRaw;
-    static std::unordered_map<int, bool> keyMap;
+    static std::array<uint8_t,KeyCount> keyMap;
 private:
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
