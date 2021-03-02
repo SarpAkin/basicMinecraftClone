@@ -39,6 +39,7 @@ public:
         pos = c.getPos();
         Construct(mesh);
     }
+    
     inline ChunkMeshGPU(ChunkMesh& m)
     {
         Construct(m);

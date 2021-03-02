@@ -9,6 +9,8 @@
 #include "hasher.h"
 #include "tile.h"
 
+
+
 const int chunk_size = 16;
 const int chunk_area = chunk_size * chunk_size;
 const int chunk_volume = chunk_area * chunk_size;
@@ -56,6 +58,8 @@ struct ChunkMesh
     std::array<VerticalChunkMesh, 4> meshes;
 };
 
+class ChunkMeshGPU;
+
 class Chunk
 {
 
@@ -78,13 +82,14 @@ class Chunk
 private:
 
     std::array<std::unique_ptr<std::array<Tile, chunk_volume>>, vertical_chunk_count> grid;
-
+public:
     Chunk* northernChunk = nullptr; //z+
     Chunk* southernChunk = nullptr; //z-
     Chunk* easternChunk = nullptr; //x+
     Chunk* westernChunk = nullptr; //x-
-public:
+//public:
     Vector2Int pos;
+    ChunkMeshGPU* GPUMesh = nullptr;
 private:
     inline void exc()
     {

@@ -13,7 +13,7 @@ class Game
 {
 private:
     TerrainGenerator<Chunk> tGen;
-    PerlinNoise heightNoise;
+    
 public:
     std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>> chunks;
 

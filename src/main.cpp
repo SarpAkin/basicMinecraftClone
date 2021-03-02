@@ -20,14 +20,11 @@
 #include "noise.h"
 #include "game.h"
 
-
-
-
 class TestRen : public Renderer
 {
 
     Game game;
-    ChunkMeshGPU mesh;
+    //ChunkMeshGPU mesh;
     glm::mat4 proj;
     glm::mat4 view;
 
@@ -36,18 +33,79 @@ class TestRen : public Renderer
     float yaw = 0;
     const float speed = 10.0f;
 public:
-    TestRen()
-    {
 
+    void DrawEast(Chunk* c, int range)
+    {
+        if (c && range)
+        {
+            c->GPUMesh->Draw(proj * view);
+            DrawEast(c->easternChunk, range - 1);
+        }
     }
+
+    void DrawWest(Chunk* c, int range)
+    {
+        if (c && range)
+        {
+            c->GPUMesh->Draw(proj * view);
+            DrawWest(c->westernChunk, range - 1);
+        }
+    }
+    void DrawSouth(Chunk* c, int range)
+    {
+        if (c && range)
+        {
+            c->GPUMesh->Draw(proj * view);
+            DrawSouth(c->southernChunk, range - 1);
+            DrawWest(c->westernChunk, range - 1);
+            DrawEast(c->easternChunk, range - 1);
+        }
+    }
+
+    void DrawNorth(Chunk* c, int range)
+    {
+        if (c && range)
+        {
+            c->GPUMesh->Draw(proj * view);
+            DrawNorth(c->northernChunk, range - 1);
+            DrawWest(c->westernChunk, range - 1);
+            DrawEast(c->easternChunk, range - 1);
+        }
+    }
+
+    void DrawChunksInRange(Chunk* c, int range = 3)
+    {
+        if (c)
+        {
+            c->GPUMesh->Draw(proj * view);
+            DrawNorth(c->northernChunk, range - 1);
+            DrawSouth(c->southernChunk, range - 1);
+            DrawWest(c->westernChunk, range - 1);
+            DrawEast(c->easternChunk, range - 1);
+        }
+    }
+
     void OnStart() override
     {
         proj = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 100.0f);
 
-        game.GenerateChunk(Vector2Int(0, 0));
         ChunkMeshGPU::staticInit();
-        mesh = ChunkMeshGPU(*game.chunks[{0, 0}]);
 
+        int range = 5;
+
+        for (int x = -range;x < range;++x)
+            for (int y = -range;y < range;++y)
+            {
+                game.GenerateChunk(Vector2Int(x, y));
+
+            }
+        for (int x = -range;x < range;++x)
+            for (int y = -range;y < range;++y)
+                game.chunks[{x, y}]->GPUMesh = new ChunkMeshGPU(*game.chunks[{x, y}]);
+        //game.chunks[{1,1}] = nullptr;
+
+        //game.GenerateChunk(Vector2Int(0, 0));
+        //game.chunks[{0, 0}]->GPUMesh = new ChunkMeshGPU(*game.chunks[{0, 0}]);
     }
 
     void UpdateCamera(double DeltaT)
@@ -93,9 +151,10 @@ public:
     void OnUpdate(double DeltaT) override
     {
         UpdateCamera(DeltaT);
-        mesh.Draw(proj * view);
 
-
+        //std::cout << "aa" << '\n';
+        //game.chunks[{0,0}]->GPUMesh->Draw(proj*view);
+        DrawChunksInRange(game.chunks[{(int)viewPos.x / chunk_size, (int)viewPos.z / chunk_size}].get(), 10);
     }
 };
 
@@ -103,7 +162,7 @@ public:
 int main()
 {
     TestRen t = TestRen();
-    if (t.Construct())
+    if (t.Construct(1280,720))
         t.Start();
 
 }

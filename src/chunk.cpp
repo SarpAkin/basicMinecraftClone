@@ -1,4 +1,5 @@
 #include "chunk.h"
+#include "ChunkMeshGPU.h"
 
 #include <iostream>
 
@@ -148,7 +149,7 @@ ChunkMesh Chunk::GenMesh() const
 
 Chunk::~Chunk()
 {
-
+    delete GPUMesh;
     if (northernChunk)
         northernChunk->southernChunk = nullptr;
     if (southernChunk)
@@ -161,10 +162,10 @@ Chunk::~Chunk()
 
 void Chunk::Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>>& Chunks)
 {
-    northernChunk = Chunks[pos - Vector2Int(0, 1)].get();
-    southernChunk = Chunks[pos - Vector2Int(0, -1)].get();
-    easternChunk = Chunks[pos - Vector2Int(1, 0)].get();
-    westernChunk = Chunks[pos - Vector2Int(-1, 0)].get();
+    northernChunk = Chunks[pos + Vector2Int(0, 1)].get();
+    southernChunk = Chunks[pos + Vector2Int(0, -1)].get();
+    easternChunk = Chunks[pos + Vector2Int(1, 0)].get();
+    westernChunk = Chunks[pos + Vector2Int(-1, 0)].get();
 
     if (northernChunk)
         northernChunk->southernChunk = this;
