@@ -24,7 +24,7 @@ void Renderer::DrawU16(const VertexArray& va, const IndexBuffer& ib, const Shade
 
 void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key < KeyCount)
+    if (key < KeyCount &&key >= 0)
         keyMap[key] = action;
     //std::cout << action << ' ' << key << '\n';
 }
@@ -81,7 +81,7 @@ bool Renderer::Construct(int width_, int height_)
     GLCALL(glfwSetKeyCallback(window, key_callback));
     GLCALL(glfwSetCursorPosCallback(window, cursor_position_callback));
 
-    GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
+    //GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
     if (glfwRawMouseMotionSupported())
     {
         GLCALL(glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE));

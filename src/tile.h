@@ -18,7 +18,8 @@ enum TileTypes : uint16_t
     air = 0,
     stone = 1,
     grass = 2,
-    dirt = 3
+    dirt = 3,
+    sand = 4
 };
 
 struct Tile

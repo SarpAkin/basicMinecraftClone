@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+#include <ctime>
+
 #include <PerlinNoise.hpp>
 
 #include <glm/vec3.hpp>
@@ -13,6 +16,12 @@ class PerlinNoise
 public:
     siv::BasicPerlinNoise<double> noise;
 public:
+
+    PerlinNoise()
+    : noise(time(NULL))
+    {
+        std::cout << time(NULL) << '\n';
+    }
 
     template<typename T>
     inline float operator[](glm::vec<3, T> vec) const

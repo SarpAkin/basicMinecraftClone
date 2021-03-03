@@ -1,4 +1,5 @@
 #include <functional>
+#include <iostream>
 #include <variant>
 #include <string>
 #include <memory>
@@ -22,6 +23,10 @@ struct ChunkDetails
         std::hash<std::string> h;
         //std::cout << h(std::string((char*)this, (char*)this + sizeof(ChunkDetails))) << " " << h(std::string((char*)&ot, (char*)&ot + sizeof(ChunkDetails))) << '\n';
         return h(std::string((char*)this, (char*)this + sizeof(ChunkDetails))) > h(std::string((char*)&ot, (char*)&ot + sizeof(ChunkDetails)));
+    }
+    inline ChunkDetails operator + (Vector2Int v)
+    {
+        return ChunkDetails(v + cord, stage);
     }
 };
 
@@ -62,18 +67,54 @@ private://data
     std::map<ChunkDetails, std::tuple<int, std::shared_ptr<Chunk> > > cachedChunks;
     std::vector<std::variant<ModifyCurrent, NewStage>> rules;
 public:
-    std::function<void(Chunk&,Vector2Int)> setPos;
+    std::function<void(Chunk&, Vector2Int)> setPos;
 
 private://functions
 
+    void SetNeighbourChunks(Chunk& c, ChunkDetails details)
+    {
+        {
+            auto cP = cachedChunks.find(details + Vector2Int(0, 1));
+            if (cP != cachedChunks.end())
+                c.northernChunk = std::get<std::shared_ptr<Chunk>>(cP->second).get();
+        }
+        {
+            auto cP = cachedChunks.find(details + Vector2Int(0, -1));
+            if (cP != cachedChunks.end())
+                c.southernChunk = std::get<std::shared_ptr<Chunk>>(cP->second).get();
+        }
+        {
+            auto cP = cachedChunks.find(details + Vector2Int(1, 0));
+            if (cP != cachedChunks.end())
+                c.easternChunk = std::get<std::shared_ptr<Chunk>>(cP->second).get();
+        }
+        {
+            auto cP = cachedChunks.find(details + Vector2Int(-1, 0));
+            if (cP != cachedChunks.end())
+                c.westernChunk = std::get<std::shared_ptr<Chunk>>(cP->second).get();
+        }
+
+        if (c.northernChunk)
+            c.northernChunk->southernChunk = &c;
+        if (c.southernChunk)
+            c.southernChunk->northernChunk = &c;
+        if (c.westernChunk)
+            c.westernChunk->easternChunk = &c;
+        if (c.easternChunk)
+            c.easternChunk->westernChunk = &c;
+    }
+
     std::unique_ptr<Chunk> initChunk(Vector2Int cord)
     {
+        //static int counter = 0;
+        //std::cout << counter++ << '\n';
         auto c = std::make_unique<Chunk>(cord);
         //setPos(*c,cord);
         for (ModifyCurrent& r : chunkInitRules)
         {
             r(*c);
         }
+        SetNeighbourChunks(*c, ChunkDetails(cord, -1));
         return c;
     }
 
@@ -108,7 +149,6 @@ private://functions
                 {
                     //if it can't ind it creates one
                     std::shared_ptr<Chunk> c_ = GetChunkAtStage(Vector2Int(x, z) + cord, stagenum - 1);
-                    setPos(*c_,Vector2Int(x_,z_));
                     nb[x_][z_] = c_;
                     //starts the counter at 1 since it used it once
                     cachedChunks[d] = std::tuple(1, c_);
@@ -120,10 +160,12 @@ private://functions
         //apply rules
         ChunkGenStage<Chunk> stage = stages[stagenum];
         auto chunk = stage.newStagefunc(std::move(nb));
+        //std::cout << chunk->pos.x << ' ' << chunk->pos.y << " : " << cord.x << ' ' << cord.y << '\n';
         for (auto& r : stage.modifierRules)
         {
             r(*chunk);
         }
+        SetNeighbourChunks(*chunk, ChunkDetails(cord, stagenum));
         return std::move(chunk);//
     }
 public://
@@ -140,7 +182,7 @@ public://
 
     void Init()
     {
-        
+
 
         int first_stageRule = -1;
         for (int i = 0;i < rules.size();++i)
@@ -158,22 +200,20 @@ public://
         if (first_stageRule == -1)
             return;
 
-        ChunkGenStage<Chunk> stage_;
+        std::vector<ModifyCurrent> modifiers;
 
         for (int i = first_stageRule;i < rules.size();++i)
         {
             if (auto func = std::get_if<ModifyCurrent>(&(rules[i])))
             {
-                stage_.modifierRules.push_back(*func);
+                //std::cout << "aaaaaaaa\n";
+                stages.back().modifierRules.push_back(*func);
             }
             else
             {
-                stages.push_back(std::move(stage_));
-                stage_ = ChunkGenStage<Chunk>();
-                stage_.newStagefunc = std::get<NewStage>(rules[i]);
+                stages.push_back({std::get<NewStage>(rules[i]),std::move(modifiers)});
             }
         }
-        stages.push_back(std::move(stage_));
 
         LastStageNum = stages.size() - 1;
     }

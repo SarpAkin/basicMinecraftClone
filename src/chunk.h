@@ -60,6 +60,12 @@ struct ChunkMesh
 
 class ChunkMeshGPU;
 
+struct ChunkGenData
+{
+    std::array<uint16_t, chunk_area> heightmap;
+    std::array<uint8_t, chunk_area> biomeMap;
+};
+
 class Chunk
 {
 
@@ -90,9 +96,11 @@ public:
 //public:
     Vector2Int pos;
     ChunkMeshGPU* GPUMesh = nullptr;
+    std::unique_ptr<ChunkGenData> chunkGenData;
 private:
     inline void exc()
     {
+        assert(0);
         throw "chunk doesn't exist!";
     }
 
