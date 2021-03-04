@@ -48,7 +48,7 @@ Tile Chunk::operator[] (Vector3Int pos) const
     {
         pos.x += chunk_size;
         if (westernChunk)
-            return (*westernChunk)[pos];
+            return (*(const Chunk*)westernChunk)[pos];
         else
             return Tile(TileTypes::air);
     }
@@ -56,7 +56,7 @@ Tile Chunk::operator[] (Vector3Int pos) const
     {
         pos.x -= chunk_size;
         if (easternChunk)
-            return (*easternChunk)[pos];
+            return (*(const Chunk*)easternChunk)[pos];
         else
             return Tile(TileTypes::air);
     }
@@ -65,7 +65,7 @@ Tile Chunk::operator[] (Vector3Int pos) const
     {
         pos.z += chunk_size;
         if (southernChunk)
-            return (*southernChunk)[pos];
+            return (*(const Chunk*)southernChunk)[pos];
         else
             return Tile(TileTypes::air);
     }
@@ -73,7 +73,7 @@ Tile Chunk::operator[] (Vector3Int pos) const
     {
         pos.z -= chunk_size;
         if (northernChunk)
-            return (*northernChunk)[pos];
+            return (*(const Chunk*)northernChunk)[pos];
         else
             return Tile(TileTypes::air);
     }
@@ -101,6 +101,12 @@ Tile Chunk::findBlockInChunk(Vector3Int pos) const
     return Tile(TileTypes::air);
 }
 
+void Chunk::updateMesh()
+{
+    delete GPUMesh;
+    GPUMesh = nullptr;
+}
+
 ChunkMesh Chunk::GenMesh() const
 {
     ChunkMesh mesh_;
@@ -110,6 +116,7 @@ ChunkMesh Chunk::GenMesh() const
         VerticalChunkMesh& mesh = mesh_.meshes[i];
         if (grid[i] != nullptr)
         {
+            mesh.reserverSquares(1000);
             for (int y = 0;y < chunk_size;++y)
             {
                 int globalY = y + i * chunk_size;
@@ -147,34 +154,79 @@ ChunkMesh Chunk::GenMesh() const
     return mesh_;
 }
 
+void Chunk::resetNeighbour()
+{
+    if (northernChunk)
+    {
+        northernChunk->southernChunk = nullptr;
+    }
+    if (southernChunk)
+    {
+        southernChunk->northernChunk = nullptr;
+    }
+    if (westernChunk)
+    {
+        westernChunk->easternChunk = nullptr;
+    }
+    if (easternChunk)
+    {
+        easternChunk->westernChunk = nullptr;
+    }
+}
+
 Chunk::~Chunk()
 {
     delete GPUMesh;
     if (northernChunk)
+    {
         northernChunk->southernChunk = nullptr;
+        northernChunk->updateMesh();
+    }
     if (southernChunk)
+    {
         southernChunk->northernChunk = nullptr;
+        southernChunk->updateMesh();
+    }
     if (westernChunk)
+    {
         westernChunk->easternChunk = nullptr;
+        westernChunk->updateMesh();
+    }
     if (easternChunk)
+    {
         easternChunk->westernChunk = nullptr;
+        easternChunk->updateMesh();
+    }
 }
 
 void Chunk::Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>>& Chunks)
 {
+   
     northernChunk = Chunks[pos + Vector2Int(0, 1)].get();
     southernChunk = Chunks[pos + Vector2Int(0, -1)].get();
     easternChunk = Chunks[pos + Vector2Int(1, 0)].get();
     westernChunk = Chunks[pos + Vector2Int(-1, 0)].get();
 
     if (northernChunk)
+    {
         northernChunk->southernChunk = this;
+        northernChunk->updateMesh();
+    }
     if (southernChunk)
+    {
         southernChunk->northernChunk = this;
+        southernChunk->updateMesh();
+    }
     if (westernChunk)
+    {
         westernChunk->easternChunk = this;
+        westernChunk->updateMesh();
+    }
     if (easternChunk)
+    {
         easternChunk->westernChunk = this;
+        easternChunk->updateMesh();
+    }
 }
 
 const int atlasX_size = 16;

@@ -20,7 +20,7 @@ public:
     PerlinNoise()
     : noise(time(NULL))
     {
-        std::cout << time(NULL) << '\n';
+        //std::cout << time(NULL) << '\n';
     }
 
     template<typename T>

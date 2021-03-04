@@ -39,6 +39,18 @@ public:
         pos = c.getPos();
         Construct(mesh);
     }
+
+    inline static void Draw(Chunk& c,Mat4x4 mvp)
+    {
+        ChunkMeshGPU*& mesh = c.GPUMesh;
+        if(mesh)
+            mesh->Draw(mvp);
+        else
+        {
+            mesh = new ChunkMeshGPU(c);
+            mesh->Draw(mvp);
+        }
+    }
     
     inline ChunkMeshGPU(ChunkMesh& m)
     {

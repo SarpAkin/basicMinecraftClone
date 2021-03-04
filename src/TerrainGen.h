@@ -34,7 +34,7 @@ const int nsize = 3;
 const int nofset = (nsize - 1) / 2;
 
 template<typename Chunk>
-using nearbyChunks = std::array<std::array<std::shared_ptr<Chunk>, nsize>, nsize>;
+using nearbyChunks = std::array<std::array<std::shared_ptr<const Chunk>, nsize>, nsize>;
 
 template<typename Chunk>
 struct ChunkGenStage
@@ -121,6 +121,8 @@ private://functions
     std::unique_ptr<Chunk> GetChunkAtStage(Vector2Int cord, int stagenum)
     {
         //stagenum -1 is reserved for init
+        static int counter = 0;
+        //std::cout << ++counter << '\n';
         if (stagenum == -1)
         {
             return initChunk(cord);
