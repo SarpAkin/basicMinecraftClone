@@ -119,7 +119,7 @@ void Game::initTerrainGen()
 
     float amp_ = 9.0f;
     float amp2 = 17.3f;
-    double freq = .0237;
+    double freq = .00237;
     double freq2 = .0692;
     auto heightNoise_ = std::make_shared<PerlinNoise>();
     auto heightNoise2_ = std::make_shared<PerlinNoise>();
@@ -240,21 +240,21 @@ void Game::initTerrainGen()
         });
 
 
-    /*
-        auto CaveNoise = std::make_shared<PerlinNoise>();
-        tGen.addRule(
-            [=](Chunk& c)
-            {
-                Vector3d RealCord = Vector3d(c.pos.x * chunk_size, 0, c.pos.y * chunk_size);
-                for (int x = 0;x < chunk_size;++x)
-                    for (int z = 0;z < chunk_size;++z)
-                        for (int y = 0;y < max_block_height;++y)
-                            if ((*CaveNoise)[(RealCord + Vector3d(x, y, z)) * 0.0617] > .4f)
-                                c[{x, y, z}] = air;
 
-            }
-        );
-    */
+    auto CaveNoise = std::make_shared<PerlinNoise>();
+    tGen.addRule(
+        [=](Chunk& c)
+        {
+            Vector3d RealCord = Vector3d(c.pos.x * chunk_size, 0, c.pos.y * chunk_size);
+            for (int x = 0;x < chunk_size;++x)
+                for (int z = 0;z < chunk_size;++z)
+                    for (int y = 0;y < max_block_height;++y)
+                        if ((*CaveNoise)[(RealCord + Vector3d(x, y, z)) * 0.0617] > .4f)
+                            c[{x, y, z}] = air;
+
+        }
+    );
+
 
     tGen.addRule(
         [](Chunk& c)

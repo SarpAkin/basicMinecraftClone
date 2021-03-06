@@ -14,11 +14,13 @@
 #include "render/renderer.h"
 #include "render/Texture.h"
 
+#include "Physics.h"
 #include "ChunkMeshGPU.h"
 #include "utility.h"
 #include "chunk.h"
 #include "noise.h"
 #include "game.h"
+#include "Entity.h"
 
 class TestRen : public Renderer
 {
@@ -28,7 +30,7 @@ class TestRen : public Renderer
     glm::mat4 proj;
     glm::mat4 view;
 
-    Vector3 viewPos;
+    Transform viewPos;
     float pitch = 90;
     float yaw = 0;
     const float speed = 10.0f;
@@ -39,7 +41,7 @@ public:
         if (c && range)
         {
             ChunkMeshGPU::Draw(*c, proj * view);
-            DrawEast(c->easternChunk, range - 1, { pos.x + 1,pos.y});
+            DrawEast(c->easternChunk, range - 1, { pos.x + 1,pos.y });
         }
         else
         {
@@ -52,7 +54,7 @@ public:
         if (c && range)
         {
             ChunkMeshGPU::Draw(*c, proj * view);
-            DrawWest(c->westernChunk, range - 1, { pos.x - 1,pos.y});
+            DrawWest(c->westernChunk, range - 1, { pos.x - 1,pos.y });
         }
         else
         {
@@ -64,9 +66,9 @@ public:
         if (c && range)
         {
             ChunkMeshGPU::Draw(*c, proj * view);
-            DrawSouth(c->southernChunk, range - 1, { pos.x,pos.y - 1});
-            DrawWest(c->westernChunk, range - 1, { pos.x - 1,pos.y});
-            DrawEast(c->easternChunk, range - 1, { pos.x + 1,pos.y});
+            DrawSouth(c->southernChunk, range - 1, { pos.x,pos.y - 1 });
+            DrawWest(c->westernChunk, range - 1, { pos.x - 1,pos.y });
+            DrawEast(c->easternChunk, range - 1, { pos.x + 1,pos.y });
         }
         else
         {
@@ -79,9 +81,9 @@ public:
         if (c && range)
         {
             ChunkMeshGPU::Draw(*c, proj * view);
-            DrawNorth(c->northernChunk, range - 1, { pos.x,pos.y + 1});
-            DrawWest(c->westernChunk, range - 1, { pos.x - 1,pos.y});
-            DrawEast(c->easternChunk, range - 1, { pos.x + 1,pos.y});
+            DrawNorth(c->northernChunk, range - 1, { pos.x,pos.y + 1 });
+            DrawWest(c->westernChunk, range - 1, { pos.x - 1,pos.y });
+            DrawEast(c->easternChunk, range - 1, { pos.x + 1,pos.y });
         }
         else
         {
@@ -94,10 +96,10 @@ public:
         if (c)
         {
             ChunkMeshGPU::Draw(*c, proj * view);
-            DrawNorth(c->northernChunk, range - 1, { pos.x,pos.y + 1});
-            DrawSouth(c->southernChunk, range - 1, { pos.x,pos.y - 1});
-            DrawWest(c->westernChunk, range - 1, { pos.x - 1,pos.y});
-            DrawEast(c->easternChunk, range - 1, { pos.x + 1,pos.y});
+            DrawNorth(c->northernChunk, range - 1, { pos.x,pos.y + 1 });
+            DrawSouth(c->southernChunk, range - 1, { pos.x,pos.y - 1 });
+            DrawWest(c->westernChunk, range - 1, { pos.x - 1,pos.y });
+            DrawEast(c->easternChunk, range - 1, { pos.x + 1,pos.y });
         }
         else
         {
@@ -107,7 +109,9 @@ public:
 
     void OnStart() override
     {
-        proj = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 200.0f);
+        viewPos = Transform({ .5f,.0f,.5f }, { .8f,2.0f,.8f });
+        viewPos.velocity = Vector3(0, 0, 0);
+        proj = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 10000.0f);
 
         ChunkMeshGPU::staticInit();
 
@@ -119,6 +123,25 @@ public:
                 game.GenerateChunk(Vector2Int(x, y));
 
             }
+
+
+        while (true)
+        {
+            game.Tick();//replace it with something like update chunks in the future
+            if (auto& c = game.chunks[{0, 0}])
+            {
+                const auto& c_ = *c;
+                for (int i = max_block_height - 1;i >= 0;--i)
+                {
+                    if (c_[{0, i, 0}] != air)
+                    {
+                        viewPos.SetMidPoint({0,i + 3,0});
+                        break;
+                    }
+                }
+                break;
+            }
+        }
         /*
     for (int x = -range;x < range;++x)
         for (int y = -range;y < range;++y)
@@ -155,7 +178,7 @@ public:
         if (keyMap[GLFW_KEY_S])
             MoveVector.x -= 1;
         if (keyMap[GLFW_KEY_SPACE])
-            MoveVector.y += 1;
+            viewPos.velocity += 1;
         if (keyMap[GLFW_KEY_LEFT_CONTROL])
             MoveVector.y -= 1;
 
@@ -165,17 +188,25 @@ public:
         MoveVector.x = v2.x;
         MoveVector.z = v2.y;
 
-        viewPos += MoveVector * (float)DeltaT * speed;
-        view = glm::lookAt(viewPos, viewPos + DirVector, Vector3(0, 1, 0));
+        MoveVector = MoveVector * speed;
+        viewPos.velocity.x = MoveVector.x;
+        viewPos.velocity.z = MoveVector.z;
+        viewPos.velocity.y += -10.0f * DeltaT;
+        ChunkVSAABB(viewPos, *game.chunks[Chunk::ToChunkCord((Vector2Int) { viewPos.pos.x, viewPos.pos.z })], DeltaT);
+        applyDrag(viewPos, DeltaT);
+        view = glm::lookAt(viewPos.GetMidPoint(), viewPos.GetMidPoint() + DirVector, Vector3(0, 1, 0));
     }
 
     void OnUpdate(double DeltaT) override
     {
         UpdateCamera(DeltaT);
+        auto cpos = Chunk::ToChunkCord((Vector2Int) { viewPos.pos.x, viewPos.pos.z });
+        //std::cout << viewPos.pos.x << ' ' << viewPos.pos.z << ' ' << cpos.x << ' ' << cpos.y << ' ' << '\n';
+        //std::cout << DeltaT << '\n';
         game.Tick();
         //std::cout << "aa" << '\n';
         //game.chunks[{0,0}]->GPUMesh->Draw(proj*view);
-        DrawChunksInRange(game.chunks[Chunk::ToChunkCord({viewPos.x,viewPos.z})].get(),Chunk::ToChunkCord({viewPos.x,viewPos.z}), 10);
+        DrawChunksInRange(game.chunks[Chunk::ToChunkCord({ viewPos.pos.x,viewPos.pos.z })].get(), Chunk::ToChunkCord({ viewPos.pos.x,viewPos.pos.z }), 10);
     }
 };
 

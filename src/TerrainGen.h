@@ -106,10 +106,7 @@ private://functions
 
     std::unique_ptr<Chunk> initChunk(Vector2Int cord)
     {
-        //static int counter = 0;
-        //std::cout << counter++ << '\n';
         auto c = std::make_unique<Chunk>(cord);
-        //setPos(*c,cord);
         for (ModifyCurrent& r : chunkInitRules)
         {
             r(*c);
@@ -121,8 +118,6 @@ private://functions
     std::unique_ptr<Chunk> GetChunkAtStage(Vector2Int cord, int stagenum)
     {
         //stagenum -1 is reserved for init
-        static int counter = 0;
-        //std::cout << ++counter << '\n';
         if (stagenum == -1)
         {
             return initChunk(cord);
@@ -162,7 +157,6 @@ private://functions
         //apply rules
         ChunkGenStage<Chunk> stage = stages[stagenum];
         auto chunk = stage.newStagefunc(std::move(nb));
-        //std::cout << chunk->pos.x << ' ' << chunk->pos.y << " : " << cord.x << ' ' << cord.y << '\n';
         for (auto& r : stage.modifierRules)
         {
             r(*chunk);
