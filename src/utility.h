@@ -18,3 +18,5 @@ inline Vector2 rotateVectorIndegrees(Vector2 v, float radian)
 {
     return rotateVectorInRadians(v, glm::radians(radian));
 }
+
+//constexpr int log()

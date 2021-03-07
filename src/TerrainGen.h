@@ -1,3 +1,5 @@
+#pragma once
+
 #include <functional>
 #include <iostream>
 #include <variant>
@@ -37,12 +39,18 @@ template<typename Chunk>
 using nearbyChunks = std::array<std::array<std::shared_ptr<const Chunk>, nsize>, nsize>;
 
 template<typename Chunk>
+using NewStage = std::function<std::unique_ptr<Chunk>(nearbyChunks<Chunk>)>;
+
+template<typename Chunk>
+using ModifyCurrent = std::function<void(Chunk&)>;
+
+template<typename Chunk>
 struct ChunkGenStage
 {
     typedef nearbyChunks<Chunk> nearbyChunks;
 
-    typedef std::function<void(Chunk&)> ModifyCurrent; //Can only modify the current chunk and can't peek to other chunks
-    typedef std::function<std::unique_ptr<Chunk>(nearbyChunks)> NewStage; //Gets mutiple chunks and creates a new stage chunk
+    typedef ModifyCurrent<Chunk> ModifyCurrent; //Can only modify the current chunk and can't peek to other chunks
+    typedef NewStage<Chunk> NewStage; //Gets mutiple chunks and creates a new stage chunk
 
     NewStage newStagefunc;
     std::vector<ModifyCurrent> modifierRules;
@@ -53,8 +61,8 @@ class TerrainGenerator
 {
     typedef nearbyChunks<Chunk> nearbyChunks;
 
-    typedef std::function<void(Chunk&)> ModifyCurrent; //Can only modify the current chunk and can't peek to other chunks
-    typedef std::function<std::unique_ptr<Chunk>(nearbyChunks)> NewStage; //Gets mutiple chunks and creates a new stage chunk
+    typedef ModifyCurrent<Chunk> ModifyCurrent; //Can only modify the current chunk and can't peek to other chunks
+    typedef NewStage<Chunk> NewStage; //Gets mutiple chunks and creates a new stage chunk
 
 
 

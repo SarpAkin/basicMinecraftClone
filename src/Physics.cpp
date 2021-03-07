@@ -81,34 +81,24 @@ void simulatePhysics(Transform& current, const std::vector<Transform>& others, f
 
 void ChunkVSAABB(Transform& t, const Chunk& c, float deltaT)
 {
-    Vector3 inChunkPos = { std::fmod(t.pos.x,chunk_size),t.pos.y,std::fmod(t.pos.z,chunk_size) };
-    if (inChunkPos.z < 0)
-    {
-
-        inChunkPos.z = chunk_size + inChunkPos.z;
-        //std::cout << inChunkPos.z << "z\n";
-    }
-
-    if (inChunkPos.x < 0)
-    {
-        inChunkPos.x = chunk_size + inChunkPos.x;
-        std::cout << inChunkPos.x << "x\n";
-    }
+    Vector3 ChunkRealPos = Vector3(c.pos.x * chunk_size,0,c.pos.y * chunk_size);
+    Vector3 inChunkPos = t.pos - ChunkRealPos;
 
 
     std::vector<Transform> blockColliders;
-    for (int x = std::floor(inChunkPos.x) - 1, x_end = 1 + std::ceil(inChunkPos.x + t.size.x);x < x_end;++x)
-        for (int y = std::floor(inChunkPos.y) - 1, y_end = 1 + std::ceil(inChunkPos.y + t.size.y);y < y_end;++y)
-            for (int z = std::floor(inChunkPos.z) - 1, z_end = 1 + std::ceil(inChunkPos.z + t.size.z);z < z_end;++z)
+    blockColliders.reserve((int)((t.size.x + 1)*(t.size.y + 1)*(t.size.z + 1)));
+    for (int x = std::floor(inChunkPos.x), x_end = std::ceil(inChunkPos.x + t.size.x) + 1;x < x_end;++x)
+        for (int y = std::floor(inChunkPos.y), y_end = std::ceil(inChunkPos.y + t.size.y) + 1;y < y_end;++y)
+            for (int z = std::floor(inChunkPos.z), z_end = std::ceil(inChunkPos.z + t.size.z) + 1;z < z_end;++z)
             {
                 if (c[{x, y, z}] != air)
                 {
-                    blockColliders.emplace_back(Vector3(x + c.pos.x * chunk_size, y, z + c.pos.y * chunk_size) + Vector3(-.5f,-.5f,-.5f), Vector3(1, 1, 1));
+                    blockColliders.emplace_back(Vector3(x, y, z) + Vector3(-.5f,-.5f,-.5f), Vector3(1, 1, 1));
                 }
             }
-    volatile int vecSize = blockColliders.size();
-    simulatePhysics(t, blockColliders, deltaT);/*
+    
     Vector3 Normalpos = t.pos;
     t.pos = inChunkPos;
-    t.pos = Normalpos + (t.pos - inChunkPos);*/
+    simulatePhysics(t, blockColliders, deltaT);
+    t.pos = Normalpos + (t.pos - inChunkPos);
 }

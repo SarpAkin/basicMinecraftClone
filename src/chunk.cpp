@@ -94,7 +94,7 @@ Tile Chunk::findBlockInChunk(Vector3Int pos) const
     {
         int slice = pos.y / chunk_size;
         if (auto& s = grid[slice])
-            return (*s)[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)];
+            return ((Tile*)s.get())[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)];
     }
 
     //return air if it can't find
@@ -315,13 +315,13 @@ void Chunk::TileRef::operator=(Tile tile)
     {
         int slice = pos.y / chunk_size;
         if (auto& s = chunk.grid[slice])
-            (*s)[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)] = tile;
+            ((Tile*)s.get())[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)] = tile;
         else
         {
             s = std::make_unique<std::array<Tile, chunk_volume>>();
             for (auto& t : *s)
                 t = air;
-            (*s)[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)] = tile;
+            ((Tile*)s.get())[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)] = tile;
         }
     }
     else
@@ -336,7 +336,7 @@ Chunk::TileRef::operator Tile() const
     {
         int slice = pos.y / chunk_size;
         if (auto& s = chunk.grid[slice])
-            return (*s)[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)];
+            return ((Tile*)s.get())[pos.x + ((pos.y % chunk_size) * chunk_size) + (pos.z * chunk_area)];
     }
     return Tile(TileTypes::air);
 }

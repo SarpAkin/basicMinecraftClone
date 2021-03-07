@@ -59,16 +59,18 @@ struct ChunkMesh
 };
 
 class ChunkMeshGPU;
-
+class TGenFunctions;
 struct ChunkGenData
 {
     std::array<uint16_t, chunk_area> heightmap;
     std::array<uint8_t, chunk_area> biomeMap;
 };
-
+class Game;
 class Chunk
 {
-
+    friend TGenFunctions;
+    friend Game;
+    
     class TileRef
     {
         friend Chunk;

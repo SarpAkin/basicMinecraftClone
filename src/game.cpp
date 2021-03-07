@@ -1,5 +1,8 @@
 #include "game.h"
 
+#include <chrono>
+
+#include "TGenFunctions.h"
 //CPP
 
 Game::~Game()
@@ -165,7 +168,7 @@ void Game::initTerrainGen()
 
 
     //TODO do some optimaztions for this
-    auto smoothFunc = [](nearbyChunks<Chunk> n) -> std::unique_ptr<Chunk>
+    /*auto smoothFunc = [](nearbyChunks<Chunk> n) -> std::unique_ptr<Chunk>
     {
         auto newChunk = std::make_unique<Chunk>();
         auto& c = *newChunk;
@@ -173,23 +176,144 @@ void Game::initTerrainGen()
         CreateNewChunkStage(midChunk_, c);
         const auto& midChunk = midChunk_;
         Vector3d RealCord = Vector3d(c.pos.x * chunk_size, 0, c.pos.y * chunk_size);
-        for (int x = 0;x < chunk_size;++x)
-            for (int z = 0;z < chunk_size;++z)
-                for (int y = 0;y < max_block_height;++y)
-                {
-                    int counter = 0;
-                    const int rangeStart = -2;
-                    const int rangeEnd = 3;
-                    for (int x_ = rangeStart;x_ < rangeEnd;++x_)
-                        for (int z_ = rangeStart;z_ < rangeEnd;++z_)
-                            for (int y_ = rangeStart;y_ < rangeEnd;++y_)
-                                counter += midChunk[{x + x_, y + y_, z + z_}] == stone;
-                    c[{x, y, z}] = counter > 70 ? stone : air;
-                }
+        for (int w = 0;w < vertical_chunk_count;++w)
+            if (midChunk.grid[w])
+                for (int x = 0;x < chunk_size;++x)
+                    for (int z = 0;z < chunk_size;++z)
+                        for (int y = w * chunk_size, y_end = y + chunk_size;y < y_end;++y)
+                        {
+                            int counter = 0;
+                            const int rangeStart = -2;
+                            const int rangeEnd = 3;
+                            for (int x_ = rangeStart;x_ < rangeEnd;++x_)
+                                for (int z_ = rangeStart;z_ < rangeEnd;++z_)
+                                    for (int y_ = rangeStart;y_ < rangeEnd;++y_)
+                                        counter += midChunk[{x + x_, y + y_, z + z_}] == stone;
+                            c[{x, y, z}] = counter > 70 ? stone : air;
+                        }
         return newChunk;
     };
-    //for(int i = 0;i < 4;++i)
-    tGen.addRule(smoothFunc);
+    */
+    auto smoothFuncOptimezed = [](nearbyChunks<Chunk> n) -> std::unique_ptr<Chunk>
+    {
+        auto newChunk = std::make_unique<Chunk>();
+        auto& c = *newChunk;
+        const auto& midChunk = *n[1][1];
+        CreateNewChunkStage(midChunk, c);
+
+        const int range = 2;
+        const int threshold = 70;
+
+        const int rangeStart = -range;
+        const int rangeEnd = range + 1;
+        const int chunkRangeEnd = chunk_size - range;
+
+        for (int w = 0;w < vertical_chunk_count;++w)
+            if (midChunk.grid[w])
+            {
+                auto oldGrid = (Tile*)midChunk.grid[w].get();
+                c.grid[w] = std::make_unique<std::array<Tile, chunk_volume>>();
+                auto newGrid = (Tile*)c.grid[w].get();
+                for (int z = range;z < chunkRangeEnd;++z)
+                {
+                    int m_z = z * chunk_area;
+                    for (int y = range, y_end = chunkRangeEnd;y < y_end;++y)
+                    {
+                        int index = range + m_z + y * chunk_size;
+                        for (int x = range;x < chunkRangeEnd;++x, ++index)
+                        {
+                            int counter = 0;
+                            for (int z_ = rangeStart;z_ < rangeEnd;++z_)
+                            {
+                                int m_z_ = (z + z_) * chunk_area;
+                                for (int y_ = rangeStart;y_ < rangeEnd;++y_)
+                                {
+                                    int index_ = x + rangeStart + m_z_ + (y + y_) * chunk_size;
+                                    for (int x_ = rangeStart;x_ < rangeEnd;++x_, ++index_)
+                                    {
+                                        counter += oldGrid[index_] == stone;
+                                    }
+                                }
+                            }
+                            newGrid[index] = counter > threshold ? stone : air;
+                        }
+                        //set y to real cord
+                        y += w * chunk_size;
+                        for (int x = 0;x < range;++x)
+                        {
+                            int counter = 0;
+                            for (int x_ = rangeStart;x_ < rangeEnd;++x_)
+                                for (int z_ = rangeStart;z_ < rangeEnd;++z_)
+                                    for (int y_ = rangeStart;y_ < rangeEnd;++y_)
+                                        counter += midChunk[{x + x_, y + y_, z + z_}] == stone;
+                            c[{x, y, z}] = counter > threshold ? stone : air;
+                        }
+
+                        for (int x = chunkRangeEnd;x < chunk_size;++x)
+                        {
+                            int counter = 0;
+                            for (int x_ = rangeStart;x_ < rangeEnd;++x_)
+                                for (int z_ = rangeStart;z_ < rangeEnd;++z_)
+                                    for (int y_ = rangeStart;y_ < rangeEnd;++y_)
+                                        counter += midChunk[{x + x_, y + y_, z + z_}] == stone;
+                            c[{x, y, z}] = counter > threshold ? stone : air;
+                        }
+                        //set y back to old cord since its shared
+                        y -= w * chunk_size;
+                    }
+
+                    for (int y = w * chunk_size, y_end = y + range;y < y_end;++y)
+                        for (int x = 0;x < chunk_size;++x)
+                        {
+                            int counter = 0;
+                            for (int x_ = rangeStart;x_ < rangeEnd;++x_)
+                                for (int z_ = rangeStart;z_ < rangeEnd;++z_)
+                                    for (int y_ = rangeStart;y_ < rangeEnd;++y_)
+                                        counter += midChunk[{x + x_, y + y_, z + z_}] == stone;
+                            c[{x, y, z}] = counter > threshold ? stone : air;
+                        }
+
+
+                    for (int y = w * chunk_size + chunkRangeEnd, y_end = y + range;y < y_end;++y)
+                        for (int x = 0;x < chunk_size;++x)
+                        {
+                            int counter = 0;
+                            for (int x_ = rangeStart;x_ < rangeEnd;++x_)
+                                for (int z_ = rangeStart;z_ < rangeEnd;++z_)
+                                    for (int y_ = rangeStart;y_ < rangeEnd;++y_)
+                                        counter += midChunk[{x + x_, y + y_, z + z_}] == stone;
+                            c[{x, y, z}] = counter > threshold ? stone : air;
+                        }
+                }
+                for (int z = 0;z < range;++z)
+                    for (int y = w * chunk_size, y_end = y + chunk_size;y < y_end;++y)
+                        for (int x = 0;x < chunk_size;++x)
+                        {
+                            int counter = 0;
+                            for (int x_ = rangeStart;x_ < rangeEnd;++x_)
+                                for (int z_ = rangeStart;z_ < rangeEnd;++z_)
+                                    for (int y_ = rangeStart;y_ < rangeEnd;++y_)
+                                        counter += midChunk[{x + x_, y + y_, z + z_}] == stone;
+                            c[{x, y, z}] = counter > threshold ? stone : air;
+                        }
+
+                for (int z = chunkRangeEnd;z < chunk_size;++z)
+                    for (int y = w * chunk_size, y_end = y + chunk_size;y < y_end;++y)
+                        for (int x = 0;x < chunk_size;++x)
+                        {
+                            int counter = 0;
+                            for (int x_ = rangeStart;x_ < rangeEnd;++x_)
+                                for (int z_ = rangeStart;z_ < rangeEnd;++z_)
+                                    for (int y_ = rangeStart;y_ < rangeEnd;++y_)
+                                        counter += midChunk[{x + x_, y + y_, z + z_}] == stone;
+                            c[{x, y, z}] = counter > threshold ? stone : air;
+                        }
+
+            }
+        return newChunk;
+    };
+    //for(int i = 0;i < 2;++i)
+    tGen.addRule(smoothFuncOptimezed);
     //tGen.addRule(smoothFunc);
 
     tGen.addRule(
@@ -242,6 +366,14 @@ void Game::initTerrainGen()
 
 
     auto CaveNoise = std::make_shared<PerlinNoise>();
+    tGen.addRule(TGenFunctions::iterateAllBlocks(
+        [=](Tile& t, Vector3Int pos)
+        {
+            if ((*CaveNoise)[((Vector3d)pos) * 0.0617] > .4f)
+                t = air;
+        }
+    ));
+    /*
     tGen.addRule(
         [=](Chunk& c)
         {
@@ -253,7 +385,7 @@ void Game::initTerrainGen()
                             c[{x, y, z}] = air;
 
         }
-    );
+    );*/
 
 
     tGen.addRule(
