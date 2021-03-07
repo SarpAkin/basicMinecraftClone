@@ -192,7 +192,8 @@ public:
         viewPos.velocity.x = MoveVector.x;
         viewPos.velocity.z = MoveVector.z;
         viewPos.velocity.y += -10.0f * DeltaT;
-        ChunkVSAABB(viewPos, *game.chunks[Chunk::ToChunkCord((Vector2Int) { viewPos.pos.x, viewPos.pos.z })], DeltaT);
+        if(auto& c = game.chunks[Chunk::ToChunkCord(viewPos.pos)])
+        ChunkVSAABB(viewPos, *c, DeltaT);
         applyDrag(viewPos, DeltaT);
         view = glm::lookAt(viewPos.GetMidPoint(), viewPos.GetMidPoint() + DirVector, Vector3(0, 1, 0));
     }
@@ -200,8 +201,8 @@ public:
     void OnUpdate(double DeltaT) override
     {
         UpdateCamera(DeltaT);
-        auto cpos = Chunk::ToChunkCord((Vector2Int) { viewPos.pos.x, viewPos.pos.z });
-        //std::cout << viewPos.pos.x << ' ' << viewPos.pos.z << ' ' << cpos.x << ' ' << cpos.y << ' ' << '\n';
+        //auto cpos = Chunk::ToChunkCord(viewPos.pos);
+        //std::cout << viewPos.pos.x << ' ' << viewPos.pos.z <<' ' << cpos.x  <<' ' <<cpos.y <<'\n';
         //std::cout << DeltaT << '\n';
         game.Tick();
         //std::cout << "aa" << '\n';

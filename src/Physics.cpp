@@ -92,7 +92,7 @@ void ChunkVSAABB(Transform& t, const Chunk& c, float deltaT)
     if (inChunkPos.x < 0)
     {
         inChunkPos.x = chunk_size + inChunkPos.x;
-        //std::cout << inChunkPos.x << "x\n";
+        std::cout << inChunkPos.x << "x\n";
     }
 
 

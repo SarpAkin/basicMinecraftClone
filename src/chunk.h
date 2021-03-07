@@ -128,9 +128,16 @@ public:
     inline static Vector2Int ToChunkCord(Vector2Int in)
     {
         return Vector2Int(
-            in.x >= 0 ? in.x / chunk_size : in.x / chunk_size - 1,
-            in.y >= 0 ? in.y / chunk_size : in.y / chunk_size - 1
-            );
+            in.x >= 0 ? in.x / chunk_size : (in.x - (chunk_size - 1)) / chunk_size,
+            in.y >= 0 ? in.y / chunk_size : (in.y - (chunk_size - 1)) / chunk_size
+        );
+    }
+    inline static Vector2Int ToChunkCord(Vector3 in)
+    {
+        return Vector2Int(
+            in.x >= 0 ? in.x / chunk_size : (std::ceil(in.x) / chunk_size) - 1,
+            in.z >= 0 ? in.z / chunk_size : (std::ceil(in.z) / chunk_size) - 1
+        );
     }
 
     void Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>>& Chunks);
