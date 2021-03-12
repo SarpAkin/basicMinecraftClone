@@ -6,6 +6,7 @@
 #include <array>
 
 #include "vectors.h"
+#include "Entity.h"
 #include "hasher.h"
 #include "tile.h"
 
@@ -15,7 +16,7 @@ const int chunk_size = 16;
 const int chunk_area = chunk_size * chunk_size;
 const int chunk_volume = chunk_area * chunk_size;
 
-const int vertical_chunk_count = 4;
+const int vertical_chunk_count = 16;
 const int max_block_height = chunk_size * vertical_chunk_count;
 
 enum class direction : uint8_t
@@ -55,17 +56,19 @@ struct VerticalChunkMesh
 
 struct ChunkMesh
 {
-    std::array<VerticalChunkMesh, 4> meshes;
+    std::array<VerticalChunkMesh, vertical_chunk_count> meshes;
 };
 
 class ChunkMeshGPU;
 class TGenFunctions;
+class Game;
+
 struct ChunkGenData
 {
     std::array<uint16_t, chunk_area> heightmap;
     std::array<uint8_t, chunk_area> biomeMap;
 };
-class Game;
+
 class Chunk
 {
     friend TGenFunctions;
@@ -86,7 +89,6 @@ class Chunk
         void operator=(Tile);
         operator Tile() const;
     };
-
 private:
 
     std::array<std::unique_ptr<std::array<Tile, chunk_volume>>, vertical_chunk_count> grid;
@@ -99,13 +101,13 @@ public:
     Vector2Int pos;
     ChunkMeshGPU* GPUMesh = nullptr;
     std::unique_ptr<ChunkGenData> chunkGenData;
+    std::vector<std::shared_ptr<Entity>> Entities;
 private:
     inline void exc()
     {
         assert(0);
         throw "chunk doesn't exist!";
     }
-
 
 public:
     /*use [] operator instead of this!*/
@@ -124,9 +126,16 @@ public:
         return pos;
     }
 
+    inline void MoveEntity(std::vector<std::shared_ptr<Entity>>::iterator e_it,Chunk& new_chunk)
+    {
+        (**e_it).currentChunk = &new_chunk;
+        new_chunk.Entities.push_back(std::move(*e_it));
+        Entities.erase(e_it);
+    }
+
     void updateMesh();
     void resetNeighbour();
-
+    void Tick(float deltaT);
     inline static Vector2Int ToChunkCord(Vector2Int in)
     {
         return Vector2Int(

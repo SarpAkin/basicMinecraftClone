@@ -1,6 +1,10 @@
 #pragma once
 
+#include <inttypes.h>
+
 #include "vectors.h"
+
+typedef uint32_t EntityID;
 
 struct Transform
 {
@@ -23,28 +27,20 @@ struct Transform
         size = size_;
     }
 };
-/*
+
+class Chunk;
+
 class Entity    
 {
 private:
 
 public:
+    EntityID entityID;
+    Chunk* currentChunk = nullptr;
     Transform transform;
 private://func
 public:
     Entity();
     ~Entity();
+
 };
-
-
-//CPP
-Entity::Entity()
-{
-
-}
-
-Entity::~Entity()
-{
-
-}
-*/

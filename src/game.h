@@ -9,6 +9,7 @@
 
 #include "TerrainGen.h"
 #include "vectors.h"
+#include "Entity.h"
 #include "hasher.h"
 #include "noise.h"
 #include "chunk.h"
@@ -28,6 +29,12 @@ private:
     std::mutex TGenWaitMutex;
     std::condition_variable_any TGenWait;
     //
+
+    //Entity spawning and storing
+    //EntityID entityIDCounter = 0;
+    std::vector<std::weak_ptr<Entity>> Entities;
+    std::vector<EntityID> deletedEntityPositions;
+    //
     bool running;
 public:
     std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>> chunks;
@@ -36,18 +43,14 @@ private:
     void initTerrainGen();
     void genChunks();
 public:
-    void Tick();
+    void Tick(float deltaT);
     void GenerateChunk(Vector2Int pos);
-    ~Game();
+    std::shared_ptr<Entity> SpawnEntity(std::unique_ptr<Entity>);
+    std::shared_ptr<Entity> SpawnEntity(std::unique_ptr<Entity> e, Chunk& c);
 
-    inline Game()
-    {
-        running = true;
-        
-        for (int i = 0;i < TGenWorkerThreadCount;++i)
-            TGenThreads.emplace_back(&Game::genChunks, this);
-        initTerrainGen();
-    }
+    ~Game();
+    Game();
+
 
 
 };

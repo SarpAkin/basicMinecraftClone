@@ -35,13 +35,13 @@ void ChunkMeshGPU::staticInit()
     chunkShader.SetUniform1i("u_Texture", 0);
 }
 
-void ChunkMeshGPU::Draw(Mat4x4 mvp)
+void ChunkMeshGPU::Draw(Mat4x4 mvp,Vector2Int pos_)
 {
     chunkShader.Bind();
     chunkShader.SetUniformMat4("u_MVP", mvp);
     for (auto& b : buffers)
     {
-        chunkShader.SetUniformMat4("u_MVP", mvp * glm::translate(Mat4x4(1.0f), Vector3(pos.x * chunk_size, b.height * chunk_size, pos.y * chunk_size)));
+        chunkShader.SetUniformMat4("u_MVP", mvp * glm::translate(Mat4x4(1.0f), Vector3(pos_.x * chunk_size, b.height * chunk_size, pos_.y * chunk_size)));
         b.vb.Bind();
         b.ib.Bind();
         GLCALL(glDrawElements(GL_TRIANGLES, b.ib.size / sizeof(uint16_t), GL_UNSIGNED_SHORT, nullptr));

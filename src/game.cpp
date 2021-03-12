@@ -17,7 +17,16 @@ Game::~Game()
 
 }
 
-void Game::Tick()
+Game::Game()
+{
+    running = true;
+
+    for (int i = 0;i < TGenWorkerThreadCount;++i)
+        TGenThreads.emplace_back(&Game::genChunks, this);
+    initTerrainGen();
+}
+
+void Game::Tick(float deltaT)
 {
     TGenOutMut.lock();
     for (auto& c : TGenOutChunks)
@@ -31,6 +40,33 @@ void Game::Tick()
     }
     TGenOutChunks.clear();
     TGenOutMut.unlock();
+    for (auto& chunk : chunks)
+    {
+        if (chunk.second)
+            chunk.second->Tick(deltaT);
+    }
+}
+
+
+std::shared_ptr<Entity> Game::SpawnEntity(std::unique_ptr<Entity> e_, Chunk& c)
+{
+    std::shared_ptr<Entity> e = std::move(e_);
+    EntityID eID;
+    if(deletedEntityPositions.size())
+    {
+        eID = deletedEntityPositions.back();
+        deletedEntityPositions.pop_back();
+        Entities[eID] = e;
+    }
+    else
+    {
+        eID = Entities.size();
+        Entities.push_back(e);
+    }
+    e->entityID = eID;
+    e->currentChunk = &c;
+    c.Entities.push_back(e);
+    return e;
 }
 
 void Game::genChunks()
@@ -146,7 +182,7 @@ void Game::initTerrainGen()
                         amp = amp_;
 
                     auto BlockCord = RealCord + Vector3d(x, 0, z);
-                    int BaseHeight = 23 + (int)(heightNoise[BlockCord * freq] * amp + heightNoise2[BlockCord * freq2] * amp2);
+                    int BaseHeight = 33 + (int)(heightNoise[BlockCord * freq] * amp + heightNoise2[BlockCord * freq2] * amp2);
                     int MaxHeight = std::min(BaseHeight + 15, max_block_height);
                     int MinHeight = std::max(BaseHeight - 15, 0);
                     for (int y = MinHeight;y < MaxHeight;++y)

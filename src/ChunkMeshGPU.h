@@ -30,7 +30,7 @@ private:
     void Construct(ChunkMesh& mesh);
 public:
     ChunkMeshGPU() = default;
-    void Draw(Mat4x4 mvp);
+    void Draw(Mat4x4 mvp,Vector2Int pos_);
     static void staticInit();
 
     inline ChunkMeshGPU(Chunk& c)
@@ -40,15 +40,15 @@ public:
         Construct(mesh);
     }
 
-    inline static void Draw(Chunk& c,Mat4x4 mvp)
+    inline static void Draw(Chunk& c,Mat4x4 mvp,Vector2Int pos_)
     {
         ChunkMeshGPU*& mesh = c.GPUMesh;
         if(mesh)
-            mesh->Draw(mvp);
+            mesh->Draw(mvp,pos_);
         else
         {
             mesh = new ChunkMeshGPU(c);
-            mesh->Draw(mvp);
+            mesh->Draw(mvp,pos_);
         }
     }
     

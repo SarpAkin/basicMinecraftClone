@@ -1,7 +1,18 @@
 #include "chunk.h"
-#include "ChunkMeshGPU.h"
 
 #include <iostream>
+
+#include "ChunkMeshGPU.h"
+#include "Physics.h"
+
+void Chunk::Tick(float deltaT)
+{
+    if (Entities.size())
+        for (int i = Entities.size() - 1;i >= 0;--i)
+        {
+            ChunkVSAABB(Entities.begin() + i, deltaT);
+        }
+}
 
 Chunk::TileRef Chunk::operator[] (Vector3Int pos)
 {
@@ -201,7 +212,7 @@ Chunk::~Chunk()
 
 void Chunk::Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>>& Chunks)
 {
-   
+
     northernChunk = Chunks[pos + Vector2Int(0, 1)].get();
     southernChunk = Chunks[pos + Vector2Int(0, -1)].get();
     easternChunk = Chunks[pos + Vector2Int(1, 0)].get();

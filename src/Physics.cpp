@@ -69,6 +69,7 @@ void simulatePhysics(Transform& current, const std::vector<Transform>& others, f
         return;
     Vector3 startPos = current.pos;
     current.pos += current.velocity * deltaT;
+    
     for (auto& other : others)
     {
         if (AABBCheck(current, other))
@@ -76,29 +77,64 @@ void simulatePhysics(Transform& current, const std::vector<Transform>& others, f
             ResolveAABBCollision(current, other);
         }
     }
+    
     current.velocity = (current.pos - startPos) / deltaT;
 }
 
-void ChunkVSAABB(Transform& t, const Chunk& c, float deltaT)
+void ChunkVSAABB(std::vector<std::shared_ptr<Entity>>::iterator e_it, float deltaT)
 {
-    Vector3 ChunkRealPos = Vector3(c.pos.x * chunk_size,0,c.pos.y * chunk_size);
-    Vector3 inChunkPos = t.pos - ChunkRealPos;
+    auto& e = **e_it;
+    const auto& c = *e.currentChunk;
+    Transform& t = e.transform;
+    Vector3 ChunkRealPos = Vector3(c.pos.x * chunk_size, 0, c.pos.y * chunk_size);
+    Vector3 inChunkPos = t.pos;
 
 
     std::vector<Transform> blockColliders;
-    blockColliders.reserve((int)((t.size.x + 1)*(t.size.y + 1)*(t.size.z + 1)));
+    blockColliders.reserve((int)((t.size.x + 1) * (t.size.y + 1) * (t.size.z + 1)));
     for (int x = std::floor(inChunkPos.x), x_end = std::ceil(inChunkPos.x + t.size.x) + 1;x < x_end;++x)
         for (int y = std::floor(inChunkPos.y), y_end = std::ceil(inChunkPos.y + t.size.y) + 1;y < y_end;++y)
             for (int z = std::floor(inChunkPos.z), z_end = std::ceil(inChunkPos.z + t.size.z) + 1;z < z_end;++z)
             {
                 if (c[{x, y, z}] != air)
                 {
-                    blockColliders.emplace_back(Vector3(x, y, z) + Vector3(-.5f,-.5f,-.5f), Vector3(1, 1, 1));
+                    blockColliders.emplace_back(Vector3(x, y, z) + Vector3(-.5f, -.5f, -.5f), Vector3(1, 1, 1));
                 }
             }
-    
-    Vector3 Normalpos = t.pos;
-    t.pos = inChunkPos;
+
     simulatePhysics(t, blockColliders, deltaT);
-    t.pos = Normalpos + (t.pos - inChunkPos);
+    const int eRange = 2;
+    if (t.pos.x < -eRange)
+    {
+        if (e.currentChunk->westernChunk)
+        {
+            t.pos.x += chunk_size;
+            e.currentChunk->MoveEntity(e_it, *e.currentChunk->westernChunk);
+        }
+    }
+    else if (t.pos.x > (eRange + chunk_size))
+    {
+        if (e.currentChunk->easternChunk)
+        {
+            t.pos.x -= chunk_size;
+            e.currentChunk->MoveEntity(e_it, *e.currentChunk->easternChunk);
+        }
+    }
+    else 
+    if (t.pos.z < -eRange)
+    {
+        if (e.currentChunk->southernChunk)
+        {
+            t.pos.z += chunk_size;
+            e.currentChunk->MoveEntity(e_it, *e.currentChunk->southernChunk);
+        }
+    }
+    else if (t.pos.z > (eRange + chunk_size))
+    {
+        if (e.currentChunk->northernChunk)
+        {
+            t.pos.z -= chunk_size;
+            e.currentChunk->MoveEntity(e_it, *e.currentChunk->northernChunk);
+        }
+    }
 }
