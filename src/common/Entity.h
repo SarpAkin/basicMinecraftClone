@@ -30,7 +30,7 @@ struct Transform
 
 class Chunk;
 
-class Entity    
+class Entity
 {
 private:
 

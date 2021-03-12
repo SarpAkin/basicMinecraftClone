@@ -4,3 +4,5 @@ out.mk
 **.o
 automake/HeaderFiles.json
 **__pycache__
+
+src/fix_include
