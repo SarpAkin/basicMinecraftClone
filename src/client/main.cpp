@@ -14,13 +14,13 @@
 #include "render/renderer.h"
 #include "render/Texture.h"
 
-#include "Physics.h"
+#include "../common/Physics.h"
 #include "ChunkMeshGPU.h"
-#include "utility.h"
-#include "chunk.h"
-#include "noise.h"
-#include "game.h"
-#include "Entity.h"
+#include "../common/utility.h"
+#include "../common/chunk.h"
+#include "../common/noise.h"
+#include "../common/game.h"
+#include "../common/Entity.h"
 
 class TestRen : public Renderer
 {

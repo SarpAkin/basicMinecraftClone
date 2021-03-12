@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "ChunkMeshGPU.h"
+#include "../client/ChunkMeshGPU.h"
 #include "Physics.h"
 
 void Chunk::Tick(float deltaT)

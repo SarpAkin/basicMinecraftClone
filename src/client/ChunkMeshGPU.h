@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "chunk.h"
+#include "../common/chunk.h"
 
 #include "render/IndexBuffer.h"
 #include "render/VertexBuffer.h"
@@ -10,7 +10,7 @@
 #include "render/shader.h"
 #include "render/Texture.h"
 
-#include "vectors.h"
+#include "../common/vectors.h"
 
 
 class ChunkMeshGPU

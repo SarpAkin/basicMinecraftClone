@@ -1,6 +1,6 @@
 #include "ChunkMeshGPU.h"
 
-#include "utility.h"
+#include "../common/utility.h"
 
 VertexBufferLayout ChunkMeshGPU::vlayout;
 Shader ChunkMeshGPU::chunkShader;
