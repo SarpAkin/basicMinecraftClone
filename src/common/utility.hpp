@@ -3,7 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <fstream>
 
-#include "vectors.h"
+#include "vectors.hpp"
 
 std::string readFile(const char* file);
 

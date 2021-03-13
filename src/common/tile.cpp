@@ -1,4 +1,4 @@
-#include "tile.h"
+#include "tile.hpp"
 
 std::vector<TileProperties> Tile::TileTypes = 
 {

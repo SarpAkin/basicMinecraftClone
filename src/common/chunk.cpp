@@ -1,9 +1,9 @@
-#include "chunk.h"
+#include "chunk.hpp"
 
 #include <iostream>
 
-#include "../client/ChunkMeshGPU.h"
-#include "Physics.h"
+#include "../client/ChunkMeshGPU.hpp"
+#include "Physics.hpp"
 
 void Chunk::Tick(float deltaT)
 {

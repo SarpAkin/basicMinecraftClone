@@ -1,4 +1,4 @@
-#include "connection.h"
+#include "connection.hpp"
 
 Connection::Connection(asio::ip::tcp::socket&& socket__, asio::io_context& ic)
     : socket_(std::move(socket__))

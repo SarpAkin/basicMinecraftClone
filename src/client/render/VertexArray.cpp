@@ -1,8 +1,8 @@
-#include "VertexArray.h"
+#include "VertexArray.hpp"
 
-#include "opengl_.h"
-#include "VertexBufferLayout.h"
-#include "VertexBuffer.h"
+#include "opengl_.hpp"
+#include "VertexBufferLayout.hpp"
+#include "VertexBuffer.hpp"
 
 
 

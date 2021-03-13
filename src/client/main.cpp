@@ -5,22 +5,22 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "render/opengl_.h"
-#include "render/IndexBuffer.h"
-#include "render/VertexBuffer.h"
-#include "render/VertexArray.h"
-#include "render/VertexBufferLayout.h"
-#include "render/shader.h"
-#include "render/renderer.h"
-#include "render/Texture.h"
+#include "render/opengl_.hpp"
+#include "render/IndexBuffer.hpp"
+#include "render/VertexBuffer.hpp"
+#include "render/VertexArray.hpp"
+#include "render/VertexBufferLayout.hpp"
+#include "render/shader.hpp"
+#include "render/renderer.hpp"
+#include "render/Texture.hpp"
 
-#include "../common/Physics.h"
-#include "ChunkMeshGPU.h"
-#include "../common/utility.h"
-#include "../common/chunk.h"
-#include "../common/noise.h"
-#include "../common/game.h"
-#include "../common/Entity.h"
+#include "../common/Physics.hpp"
+#include "ChunkMeshGPU.hpp"
+#include "../common/utility.hpp"
+#include "../common/chunk.hpp"
+#include "../common/noise.hpp"
+#include "../common/game.hpp"
+#include "../common/Entity.hpp"
 
 class TestRen : public Renderer
 {

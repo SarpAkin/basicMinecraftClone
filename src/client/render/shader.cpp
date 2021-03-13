@@ -1,10 +1,10 @@
-#include "shader.h"
+#include "shader.hpp"
 
 #include <iostream>
 #include <string>
 #include <memory>
 
-#include "opengl_.h"
+#include "opengl_.hpp"
 
 uint32_t ActiveShader = 0;
 

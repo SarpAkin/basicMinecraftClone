@@ -9,8 +9,8 @@
 #include <boost/asio/ts/buffer.hpp>
 #include <boost/asio.hpp>
 
-#include "Tsafe_queue.h"
-#include "message.h"
+#include "Tsafe_queue.hpp"
+#include "message.hpp"
 
 namespace asio = boost::asio;
 

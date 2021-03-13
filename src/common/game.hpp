@@ -7,12 +7,12 @@
 #include <memory>
 #include <mutex>
 
-#include "TerrainGen.h"
-#include "vectors.h"
-#include "Entity.h"
-#include "hasher.h"
-#include "noise.h"
-#include "chunk.h"
+#include "TerrainGen.hpp"
+#include "vectors.hpp"
+#include "Entity.hpp"
+#include "hasher.hpp"
+#include "noise.hpp"
+#include "chunk.hpp"
 
 class Game
 {

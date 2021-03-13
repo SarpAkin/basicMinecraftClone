@@ -7,13 +7,13 @@
 #include <memory>
 #include <array>
 
-#include "opengl_.h"
+#include "opengl_.hpp"
 
-#include "VertexBufferLayout.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
-#include "VertexArray.h"
-#include "shader.h"
+#include "VertexBufferLayout.hpp"
+#include "VertexBuffer.hpp"
+#include "IndexBuffer.hpp"
+#include "VertexArray.hpp"
+#include "shader.hpp"
 
 
 const int KeyCount = GLFW_KEY_LAST + 1;

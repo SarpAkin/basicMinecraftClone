@@ -1,8 +1,8 @@
-#include "game.h"
+#include "game.hpp"
 
 #include <chrono>
 
-#include "TGenFunctions.h"
+#include "TGenFunctions.hpp"
 //CPP
 
 Game::~Game()

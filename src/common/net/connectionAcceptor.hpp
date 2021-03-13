@@ -7,7 +7,7 @@
 #include <atomic>
 #include <mutex>
 
-#include "connection.h"
+#include "connection.hpp"
 
 namespace asio = boost::asio;
 

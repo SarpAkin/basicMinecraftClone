@@ -3,7 +3,7 @@
 #include <ostream>
 #include <vector>
 
-#include "opengl_.h"
+#include "opengl_.hpp"
 
 struct VertexBufferElement
 {

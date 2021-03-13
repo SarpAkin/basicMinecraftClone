@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-#include "VertexArray.h"
+#include "VertexArray.hpp"
 
 class VertexBufferLayout;
 

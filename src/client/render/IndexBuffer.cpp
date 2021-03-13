@@ -1,6 +1,6 @@
-#include "IndexBuffer.h"
+#include "IndexBuffer.hpp"
 
-#include "opengl_.h"
+#include "opengl_.hpp"
 
 
 

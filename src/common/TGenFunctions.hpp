@@ -2,8 +2,8 @@
 
 #include <functional>
 
-#include "TerrainGen.h"
-#include "chunk.h"
+#include "TerrainGen.hpp"
+#include "chunk.hpp"
 
 
 class TGenFunctions

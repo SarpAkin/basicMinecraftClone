@@ -2,15 +2,15 @@
 
 #include <glm/glm.hpp>
 
-#include "../common/chunk.h"
+#include "../common/chunk.hpp"
 
-#include "render/IndexBuffer.h"
-#include "render/VertexBuffer.h"
-#include "render/VertexBufferLayout.h"
-#include "render/shader.h"
-#include "render/Texture.h"
+#include "render/IndexBuffer.hpp"
+#include "render/VertexBuffer.hpp"
+#include "render/VertexBufferLayout.hpp"
+#include "render/shader.hpp"
+#include "render/Texture.hpp"
 
-#include "../common/vectors.h"
+#include "../common/vectors.hpp"
 
 
 class ChunkMeshGPU

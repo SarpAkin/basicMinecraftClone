@@ -1,4 +1,4 @@
-#include "opengl_.h"
+#include "opengl_.hpp"
 
 void clearGLErrors()
 {

@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "vectors.h"
-#include "Entity.h"
-#include "chunk.h"
+#include "vectors.hpp"
+#include "Entity.hpp"
+#include "chunk.hpp"
 
 inline void applyDrag(Transform& t,float DeltaT)
 {

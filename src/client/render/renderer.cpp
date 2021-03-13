@@ -1,6 +1,6 @@
 #include <chrono>
 
-#include "renderer.h"
+#include "renderer.hpp"
 
 std::array<uint8_t, KeyCount> Renderer::keyMap;
 double Renderer::MouseXRaw;

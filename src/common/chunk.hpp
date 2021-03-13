@@ -5,10 +5,10 @@
 #include <memory>
 #include <array>
 
-#include "vectors.h"
-#include "Entity.h"
-#include "hasher.h"
-#include "tile.h"
+#include "vectors.hpp"
+#include "Entity.hpp"
+#include "hasher.hpp"
+#include "tile.hpp"
 
 
 

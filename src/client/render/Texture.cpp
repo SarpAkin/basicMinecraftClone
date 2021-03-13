@@ -1,6 +1,6 @@
-#include "Texture.h"
+#include "Texture.hpp"
 
-#include "opengl_.h"
+#include "opengl_.hpp"
 
 void Texture::construct(const std::string& path)
 {

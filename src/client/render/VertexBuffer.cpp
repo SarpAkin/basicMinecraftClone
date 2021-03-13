@@ -1,6 +1,6 @@
-#include "VertexBuffer.h"
+#include "VertexBuffer.hpp"
 
-#include "opengl_.h"
+#include "opengl_.hpp"
 
 
 

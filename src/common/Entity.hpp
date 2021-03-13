@@ -2,7 +2,7 @@
 
 #include <inttypes.h>
 
-#include "vectors.h"
+#include "vectors.hpp"
 
 typedef uint32_t EntityID;
 
