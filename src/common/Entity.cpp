@@ -1,12 +1,10 @@
 #include "Entity.hpp"
 
-//CPP
+// CPP
 Entity::Entity()
 {
-
 }
 
 Entity::~Entity()
 {
-
 }

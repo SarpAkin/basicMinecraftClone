@@ -1,8 +1,12 @@
 .vscode
-out.out
-out.mk
+client.mk
+server.mk
+**.out
 **.o
+**.h.json
 automake/HeaderFiles.json
 **__pycache__
 
 src/fix_include
+
+compile_flags.txt

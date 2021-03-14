@@ -2,7 +2,11 @@
 
 #include <iostream>
 
+#define SERVER_SIDE
+#ifndef SERVER_SIDE
 #include "../client/ChunkMeshGPU.hpp"
+#endif
+
 #include "Physics.hpp"
 
 void Chunk::Tick(float deltaT)
@@ -112,10 +116,13 @@ Tile Chunk::findBlockInChunk(Vector3Int pos) const
     return Tile(TileTypes::air);
 }
 
+
 void Chunk::updateMesh()
 {
+    #ifndef SERVER_SIDE
     delete GPUMesh;
     GPUMesh = nullptr;
+    #endif
 }
 
 ChunkMesh Chunk::GenMesh() const
@@ -187,7 +194,9 @@ void Chunk::resetNeighbour()
 
 Chunk::~Chunk()
 {
+    #ifndef SERVER_SIDE
     delete GPUMesh;
+    #endif
     if (northernChunk)
     {
         northernChunk->southernChunk = nullptr;
@@ -208,6 +217,7 @@ Chunk::~Chunk()
         easternChunk->westernChunk = nullptr;
         easternChunk->updateMesh();
     }
+
 }
 
 void Chunk::Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>>& Chunks)

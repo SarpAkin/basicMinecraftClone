@@ -11,6 +11,7 @@
 
 #include "Tsafe_queue.hpp"
 #include "message.hpp"
+#include "../utility.hpp"
 
 namespace asio = boost::asio;
 
@@ -28,7 +29,6 @@ private:
     asio::io_context* i_cont;
     asio::ip::tcp::socket socket_;
 
-    bool useQueueOnMessageReceive = true;
     bool isOpen = true;
 
     T_queue<std::shared_ptr<const Message>> outqueue;
@@ -55,6 +55,11 @@ public:
     inline bool isopen()
     {
         return isOpen;
+    }
+
+    inline void SetTName(std::string name)
+    {
+        SetThreadName(writerThread,name + " W");
     }
 };
 

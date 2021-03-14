@@ -60,7 +60,7 @@ struct ChunkMesh
 };
 
 class ChunkMeshGPU;
-class TGenFunctions;
+class TGen;
 class Game;
 
 struct ChunkGenData
@@ -71,7 +71,7 @@ struct ChunkGenData
 
 class Chunk
 {
-    friend TGenFunctions;
+    friend TGen;
     friend Game;
     
     class TileRef

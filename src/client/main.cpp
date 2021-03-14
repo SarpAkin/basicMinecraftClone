@@ -31,7 +31,7 @@ class TestRen : public Renderer
     glm::mat4 view;
 
     std::shared_ptr<Entity> player;
-    float pitch = 90;
+    float pitch = 0;
     float yaw = 0;
     const float speed = 10.0f;
 public:
@@ -45,7 +45,7 @@ public:
         }
         else
         {
-            game.GenerateChunk(pos + player->currentChunk->pos);
+            //game.GenerateChunk(pos + player->currentChunk->pos);
         }
     }
 
@@ -58,7 +58,7 @@ public:
         }
         else
         {
-            game.GenerateChunk(pos + player->currentChunk->pos);
+            //game.GenerateChunk(pos + player->currentChunk->pos);
         }
     }
     
@@ -73,7 +73,7 @@ public:
         }
         else
         {
-            game.GenerateChunk(pos +player->currentChunk->pos);
+            //game.GenerateChunk(pos +player->currentChunk->pos);
         }
     }
 
@@ -88,7 +88,7 @@ public:
         }
         else
         {
-            game.GenerateChunk(pos+player->currentChunk->pos);
+            //game.GenerateChunk(pos+player->currentChunk->pos);
         }
     }
 
@@ -105,7 +105,7 @@ public:
         }
         else
         {
-            game.GenerateChunk(pos+player->currentChunk->pos);
+            //game.GenerateChunk(pos+player->currentChunk->pos);
         }
     }
 
@@ -131,7 +131,7 @@ public:
 
         while (true)
         {
-            game.Tick(0.000001f);//replace it with something like update chunks in the future
+            //game.Tick(0.000001f);//replace it with something like update chunks in the future
             if (auto& c = game.chunks[{0, 0}])
             {
                 const auto& c_ = *c;
@@ -203,7 +203,7 @@ public:
     {
         Transform& viewPos = player->transform;
 
-        game.Tick(DeltaT);
+        //game.Tick(DeltaT);
         UpdateCamera(DeltaT);
 
 
@@ -211,11 +211,15 @@ public:
     }
 };
 
+#include "net/client.hpp"
 
 int main()
 {
+    /*
     TestRen t = TestRen();
     if (t.Construct(1280, 720))
-        t.Start();
+        t.Start();*/
 
+    Client c(30020,"127.0.0.1");
+    
 }

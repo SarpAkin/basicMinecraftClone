@@ -1,27 +1,30 @@
 #pragma once
 
+#include <array>
+#include <experimental/type_traits>
 #include <string>
 #include <type_traits>
-#include <array>
+#include <vector>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define AT_ __FILE__ ":" TOSTRING(__LINE__)
 
-#define CHECK_TYPE(T) \
-static_assert(std::is_trivially_copyable<T>::value,#T AT_); \
-static_assert(std::is_standard_layout<T>::value,#T AT_);
-
+#define CHECK_TYPE(T)                                                                                                  \
+    static_assert(std::is_trivially_copyable<T>::value, #T AT_);                                                       \
+    static_assert(std::is_standard_layout<T>::value, #T AT_);
 
 class Message
 {
 private:
     int index = 0;
     std::vector<char> data_;
+
+private:
 public:
     Message() = default;
 
-    //ereases popped parts which were already going to be erased
+    // ereases popped parts which were already going to be erased
     inline void trim()
     {
         data_.erase(data_.begin(), data_.begin() + index);
@@ -44,17 +47,36 @@ public:
         return data_;
     }
 
+    class Test
+    {
+    public:
+        void foo();
+    };
+
     template <typename T>
     void push_back(const T& item)
     {
-        CHECK_TYPE(T)
+        constexpr bool hasFunc = requires(T & t, Message & m)
+        {
+            t.Serialize(m);
+            t.Deserialize(m);
+        };
+        if constexpr (hasFunc)
+        {
+            item.Serialize(*this);
+        }
+        else
+        {
+            CHECK_TYPE(T);
             data_.insert(data_.end(), (char*)&item, (char*)&item + sizeof(T));
+        }
     }
 
     template <typename T>
     inline void push_back(T&& item)
     {
-        push_back(item);
+        const auto& ref = item;
+        push_back(ref);
     }
 
     inline void push_back(const std::string& item)
@@ -69,25 +91,50 @@ public:
     template <typename T>
     void push_back(const std::vector<T>& item);
 
-
-    template<typename T>
+    template <typename T>
     T pop_front()
     {
-        CHECK_TYPE(T);
-        T tmp = *(T*)(data_.data() + index);
-        index += sizeof(T);
-        //data_.erase(data_.begin(), data_.begin() + sizeof(T));
 
-        return tmp;
+        constexpr bool hasFunc = requires(T & t, Message & m)
+        {
+            t.Serialize(m);
+            t.Deserialize(m);
+        };
+        if constexpr (hasFunc)
+        {
+            T tmp;
+            tmp.Deserialize(*this);
+            return tmp;
+        }
+        else
+        {
+            CHECK_TYPE(T);
+            T tmp = *(T*)(data_.data() + index);
+            index += sizeof(T);
+            return tmp;
+        }
+        // data_.erase(data_.begin(), data_.begin() + sizeof(T));
     }
 
-    template<typename T>
+    template <typename T>
     void pop_front(T& item)
     {
-        CHECK_TYPE(T);
-        item = *(T*)(data_.data() + index);
-        index += sizeof(T);
-        //data_.erase(data_.begin(), data_.begin() + sizeof(T));
+        constexpr bool hasFunc = requires(T & t, Message & m)
+        {
+            t.Serialize(m);
+            t.Deserialize(m);
+        };
+        if constexpr (hasFunc)
+        {
+            item.Deserialize(*this);
+        }
+        else
+        {
+            CHECK_TYPE(T);
+            item = *(T*)(data_.data() + index);
+            index += sizeof(T);
+        }
+        // data_.erase(data_.begin(), data_.begin() + sizeof(T));
     }
 
     inline void pop_front(std::string& item)
