@@ -1,10 +1,9 @@
 #include "connection.hpp"
+#include <boost/asio/write.hpp>
 
-Connection::Connection(asio::ip::tcp::socket&& socket__, asio::io_context& ic)
-    : socket_(std::move(socket__))
+Connection::Connection(asio::ip::tcp::socket&& socket__, asio::io_context& ic) : socket_(std::move(socket__))
 {
     i_cont = &ic;
-    writerThread = std::thread(&Connection::write, this);
     listen();
 }
 
@@ -14,7 +13,11 @@ bool Connection::Send(std::shared_ptr<const Message> DVec)
         return false;
 
     outqueue.push_back(std::move(DVec));
-    messageWait.notify_one();
+    if (!isWriting)
+    {
+        isWriting = true;
+        write();
+    }
 
     return true;
 }
@@ -24,15 +27,45 @@ bool Connection::Send(std::vector<std::shared_ptr<const Message>> DVec)
     if (!isOpen)
         return false;
 
-    //May require a mutex here
-    //size_t qsize = outqueue.size();
+    // May require a mutex here
+    // size_t qsize = outqueue.size();
     outqueue.push_back(std::move(DVec));
-    messageWait.notify_one();
+    if (!isWriting)
+    {
+        isWriting = true;
+        write();
+    }
     return true;
 }
 
 void Connection::write()
 {
+    writeBBuffer = outqueue.pop_front();
+    MHeader header;
+    header.DataSize = writeBBuffer->size();
+    auto writeHBuffer = std::vector<char>((char*)&header, (char*)&header + sizeof(MHeader));
+    asio::async_write(socket_, asio::buffer(writeHBuffer), [this](boost::system::error_code ec, std::size_t length) {
+        if (ec)
+        {
+            std::cout << "Stopping connection due to " << ec.message() << std::endl;
+            Stop();
+            return;
+        }
+        asio::async_write(socket_, asio::buffer(writeBBuffer->data()),
+            [this](boost::system::error_code ec, std::size_t length) {
+                if (ec)
+                {
+                    std::cout << "Stopping connection due to " << ec.message() << std::endl;
+                    Stop();
+                    return;
+                }
+                if (outqueue.size())
+                    write();
+                else
+                    isWriting = false;
+            });
+    });
+    /*
     try
     {
         while (socket_.is_open() && isOpen)
@@ -42,11 +75,13 @@ void Connection::write()
                 auto writeBBuffer = outqueue.pop_front();
                 MHeader header;
                 header.DataSize = writeBBuffer->size();
-                auto writeHBuffer = std::vector<char>((char*)&header, (char*)&header + sizeof(MHeader));
+                auto writeHBuffer = std::vector<char>((char*)&header,
+    (char*)&header + sizeof(MHeader)); socket_.wait(socket_.wait_write);
+                asio::write(socket_,asio::buffer(writeHBuffer));
+                //socket_.write_some(asio::buffer(writeHBuffer));
                 socket_.wait(socket_.wait_write);
-                socket_.write_some(asio::buffer(writeHBuffer));
-                socket_.wait(socket_.wait_write);
-                socket_.write_some(asio::buffer(writeBBuffer->data()));
+                //socket_.write_some(asio::buffer(writeBBuffer->data()));
+                asio::write(socket_,asio::buffer(writeBBuffer->data()));
             }
             else
             {
@@ -56,22 +91,25 @@ void Connection::write()
     }
     catch (const boost::system::error_code& ec)
     {
-        std::cout << "Some error occured stoping connection. reason :" << ec.message() << '\n';
+        std::cout << "Some error occured stoping connection. reason :" <<
+    ec.message() << '\n';
     }
     catch (const boost::wrapexcept<boost::system::system_error>& ec)
     {
-        std::cout << "Some error occured stoping connection. reason :" << ec.what() << '\n';
+        std::cout << "Some error occured stoping connection. reason :" <<
+    ec.what() << '\n';
     }
 
     Stop();
+    */
 }
 
 void Connection::listen()
 {
-    //std::size_T May need to be replaced with size_t
+    // std::size_T May need to be replaced with size_t
+
     asio::async_read(socket_, asio::buffer(readHBuffer, sizeof(MHeader)),
-        [this](boost::system::error_code ec, std::size_t length)
-        {
+        [this](boost::system::error_code ec, std::size_t length) {
             if (ec)
             {
                 std::cout << "Stopping connection due to " << ec.message() << std::endl;
@@ -83,8 +121,7 @@ void Connection::listen()
             {
                 readBBuffer.data() = std::vector<char>(header.DataSize, 0);
                 asio::async_read(socket_, asio::buffer(readBBuffer.data(), header.DataSize),
-                    [this](boost::system::error_code ec, std::size_t length)
-                    {
+                    [this](boost::system::error_code ec, std::size_t length) {
                         if (ec)
                         {
                             Stop();
@@ -99,7 +136,6 @@ void Connection::listen()
             {
                 listen();
             }
-
         });
 }
 
@@ -116,6 +152,5 @@ void Connection::Stop()
 Connection::~Connection()
 {
     Stop();
-    //this musn't  be at stop otherwise worker thread try to join itself
-    writerThread.join();
+    // this musn't  be at stop otherwise worker thread try to join itself
 }

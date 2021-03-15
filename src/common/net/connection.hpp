@@ -23,7 +23,7 @@ struct MHeader
 class Connection
 {
 private:
-    std::thread writerThread;
+    //std::thread writerThread;
     std::condition_variable_any messageWait;
     std::mutex waitLock;
     asio::io_context* i_cont;
@@ -31,10 +31,13 @@ private:
 
     bool isOpen = true;
 
+    bool isWriting = false;
+
     T_queue<std::shared_ptr<const Message>> outqueue;
 
     std::vector<char> readHBuffer = std::vector<char>(sizeof(MHeader));
     Message readBBuffer;
+    std::shared_ptr<const Message> writeBBuffer;
 
 public:
     T_queue<Message> inqueue;
@@ -57,9 +60,5 @@ public:
         return isOpen;
     }
 
-    inline void SetTName(std::string name)
-    {
-        SetThreadName(writerThread,name + " W");
-    }
 };
 

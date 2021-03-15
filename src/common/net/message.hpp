@@ -1,7 +1,10 @@
 #pragma once
 
+#include <assert.h>
 #include <array>
+#include <cstdint>
 #include <experimental/type_traits>
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -27,8 +30,11 @@ public:
     // ereases popped parts which were already going to be erased
     inline void trim()
     {
-        data_.erase(data_.begin(), data_.begin() + index);
-        index = 0;
+        if (index)
+        {
+            data_.erase(data_.begin(), data_.begin() + index);
+            index = 0;
+        }
     }
 
     inline size_t size() const
@@ -77,6 +83,49 @@ public:
     {
         const auto& ref = item;
         push_back(ref);
+    }
+
+    template <typename T>
+    inline void push_back(const std::unique_ptr<T>& item)
+    {
+        if (item)
+        {
+            push_back(uint8_t(1));
+            push_back(*item);
+        }
+        else
+        {
+            push_back(uint8_t(0));
+        }
+    }
+
+    template <typename T>
+    inline void pop_front(std::unique_ptr<T>& item)
+    {
+        if (pop_front<uint8_t>())
+        {
+            if (item)
+            {
+                pop_front(*item);
+            }
+            else
+            {
+                constexpr bool has_def_constructor = requires(std::unique_ptr<T> ptr)
+                {
+                    ptr = std::make_unique<T>();
+                };
+                if constexpr (has_def_constructor)
+                {
+                    item = std::make_unique<T>();
+                    pop_front(*item);
+                }
+                else 
+                {
+                    //give assertion if T can't be copy constructed.
+                    assert(0);
+                }
+            }
+        }
     }
 
     inline void push_back(const std::string& item)

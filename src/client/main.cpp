@@ -14,8 +14,10 @@
 #include "render/renderer.hpp"
 #include "render/Texture.hpp"
 
-#include "../common/Physics.hpp"
 #include "ChunkMeshGPU.hpp"
+#include "c_game.hpp"
+
+#include "../common/Physics.hpp"
 #include "../common/utility.hpp"
 #include "../common/chunk.hpp"
 #include "../common/noise.hpp"
@@ -25,7 +27,7 @@
 class TestRen : public Renderer
 {
 
-    Game game;
+    C_game game;
     //ChunkMeshGPU mesh;
     glm::mat4 proj;
     glm::mat4 view;
@@ -35,6 +37,12 @@ class TestRen : public Renderer
     float yaw = 0;
     const float speed = 10.0f;
 public:
+
+    TestRen()
+    : Renderer(),game(30020,"127.0.0.1")
+    {
+        player = game.Player.lock();
+    }
 
     void DrawEast(Chunk* c, int range, Vector2Int pos)
     {
@@ -119,35 +127,6 @@ public:
 
         ChunkMeshGPU::staticInit();
 
-        int range = 5;
-
-        for (int x = -range;x < range;++x)
-            for (int y = -range;y < range;++y)
-            {
-                game.GenerateChunk(Vector2Int(x, y));
-
-            }
-
-
-        while (true)
-        {
-            //game.Tick(0.000001f);//replace it with something like update chunks in the future
-            if (auto& c = game.chunks[{0, 0}])
-            {
-                const auto& c_ = *c;
-                for (int i = max_block_height - 1;i >= 0;--i)
-                {
-                    if (c_[{0, i, 0}] != air)
-                    {
-                        viewPos.SetMidPoint({0,i + 3,0});
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-
-        player = game.SpawnEntity(std::move(player_),*game.chunks[{0, 0}]);
     }
 
     void UpdateCamera(double DeltaT)
@@ -215,11 +194,9 @@ public:
 
 int main()
 {
-    /*
+    
     TestRen t = TestRen();
     if (t.Construct(1280, 720))
-        t.Start();*/
-
-    Client c(30020,"127.0.0.1");
+        t.Start();
     
 }

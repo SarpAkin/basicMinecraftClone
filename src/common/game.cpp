@@ -1,45 +1,40 @@
 #include "game.hpp"
+#include "Entity.hpp"
 
-#include <chrono>
 #include <cassert>
+#include <chrono>
 
+// CPP
 
-//CPP
+void Game::R_EntityMoved(M_P_ARGS_T)
+{
+    auto e = GetEntity(m.pop_front<EntityID>());
+    if (e)
+        m.pop_front(e->transform.pos);
+}
 
-Game::~Game()
+Message Game::S_EntityMoved(Entity& e)
+{
+    Message m;
+    m.push_back(MessageTypes::EntityMoved);
+    m.push_back(e.transform.pos);
+    return m;
+}
+
+void Game::ProcessMessages(M_P_ARGS_T)
 {
 
+    // Get Messaage Type first
+    auto mType = m.pop_front<MessageTypes>();
+    switch (mType)
+    {
+        M_P_CASE(EntityMoved);
+    default:
+        ProcessMessageCustom(mType, M_P_ARGS);
+        break;
+    }
 }
 
 Game::Game()
 {
-
-}
-
-std::shared_ptr<Entity> GetEntity()
-{
-    std::cerr << "this method shouldn't be used!\n";
-    assert(0);
-    return nullptr;
-}
-
-std::shared_ptr<Entity> Game::SpawnEntity(std::unique_ptr<Entity> e_, Chunk& c)
-{
-    std::shared_ptr<Entity> e = std::move(e_);
-    EntityID eID;
-    if(deletedEntityPositions.size())
-    {
-        eID = deletedEntityPositions.back();
-        deletedEntityPositions.pop_back();
-        Entities[eID] = e;
-    }
-    else
-    {
-        eID = Entities.size();
-        Entities.push_back(e);
-    }
-    e->entityID = eID;
-    e->currentChunk = &c;
-    c.Entities.push_back(e);
-    return e;
 }

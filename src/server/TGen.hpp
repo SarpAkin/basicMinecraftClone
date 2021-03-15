@@ -37,12 +37,14 @@ private:
 public:
     std::vector<std::unique_ptr<Chunk>> GetChunks();
     void GenerateChunk(Vector2Int pos);
+    inline void GenerateChunk(std::vector<Vector2Int> poses){for(auto& pos : poses)GenerateChunk(pos);}
 
     static ModifyCurrent<Chunk> iterateAllBlocks(std::function<void(Tile&, Vector3Int pos)> func);
     static void initTgen(TerrainGenerator<Chunk>& tGen);
 
     inline TGen()
     {
+        initTgen(tGen);
         running = true;
         for (int i = 0; i < TGenWorkerThreadCount; ++i)
             TGenThreads.emplace_back(&TGen::GenerateChunks, this);

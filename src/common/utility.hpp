@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <string>
 #include <thread>
+#include <type_traits>
 
 #include "net/message.hpp"
 
@@ -36,6 +37,56 @@ inline void SetThreadName(std::string name)
     SetThreadName(name.c_str());
 }
 // constexpr int log()
+
+template <typename T, typename indexer = uint32_t>
+class vectorBasedDic
+{
+    static constexpr bool is_ptr = requires(T t)
+    {
+        t = nullptr;
+    };
+    static constexpr bool is_weak_ptr = requires(T t)
+    {
+        t.lock() = nullptr; // for weak pointers
+    };
+    static_assert(is_ptr || is_weak_ptr, "not a pointer!");
+
+    std::vector<indexer> deletedElementPositions;
+
+public:
+    std::vector<T> items;
+
+    indexer push_pack(T t)
+    {
+        if (deletedElementPositions.size())
+        {
+            indexer index = deletedElementPositions.back();
+            deletedElementPositions.pop_back();
+            items[index] = t;
+            return index;
+        }
+        else
+        {
+            items.push_back(t);
+            return items.size() - 1;
+        }
+    }
+
+    void erease(indexer i)
+    {
+        if constexpr (is_weak_ptr)
+            items[i].reset();
+        else
+            items[i] = nullptr;
+        deletedElementPositions.push_back(i);
+    }
+
+    inline auto& operator[](indexer i)
+    {
+        return items[i];
+    }
+
+};
 
 template <typename T, typename... Types>
 void SerializeMultiple(Message& m, T& arg0)

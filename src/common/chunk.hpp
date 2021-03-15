@@ -2,9 +2,11 @@
 
 #include <unordered_map>
 #include <inttypes.h>
+#include <iostream>
 #include <memory>
 #include <array>
 
+#include "utility.hpp"
 #include "vectors.hpp"
 #include "Entity.hpp"
 #include "hasher.hpp"
@@ -105,11 +107,14 @@ public:
 private:
     inline void exc()
     {
+        std::cerr << "chunk doesn't exist!\n";
         assert(0);
-        throw "chunk doesn't exist!";
     }
 
 public:
+
+    GEN_SERIALIZATION_FUNCTIONS(pos,grid);
+
     /*use [] operator instead of this!*/
     TileRef findBlockInChunk(Vector3Int);
     /*use [] operator instead of this!*/

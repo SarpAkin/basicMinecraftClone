@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utility.hpp"
+
 #include <inttypes.h>
 
 #include "vectors.hpp"
@@ -28,6 +30,7 @@ struct Transform
     }
 };
 
+class Game;
 class Chunk;
 
 class Entity
@@ -40,6 +43,9 @@ public:
     Transform transform;
 private://func
 public:
+    void Serialize(Message& m);
+    bool Deserialize(Message& m,Game* g);
+
     Entity();
     ~Entity();
 

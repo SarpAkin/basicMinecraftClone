@@ -8,3 +8,6 @@ PointerAlignment: Left
 AccessModifierOffset: -4
 AlwaysBreakTemplateDeclarations: Yes
 #UseTabStyle: Always
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllArgumentsOnNextLine: false
+AlignAfterOpenBracket: DontAlign

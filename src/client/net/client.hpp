@@ -24,11 +24,6 @@ public:
     Client(uint16_t portNum, const char* ip);
     ~Client();
 
-    //inlines
-    inline Connection& getConnection()
-    {
-        return *connection;
-    }
 };
 
 

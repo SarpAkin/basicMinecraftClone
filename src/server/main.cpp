@@ -1,47 +1,29 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
-//#include <thread>
+#include <thread>
 #include <utility>
 
 #include <string>
 #include <vector>
 
 #include "../common/utility.hpp"
-//#include "../common/net/connection.hpp"
-//#include "../common/net/connectionAcceptor.hpp"
-
-struct SomeStruct
-{
-    int field;
-    std::string field2;
-    std::vector<int> ints;
-    GEN_SERIALIZATION_FUNCTIONS(field,field2,ints);
-    /*
-    inline void Serialize(Message& m)const
-    {
-        m.push_back(field);
-        m.push_back(field2);
-        m.push_back(ints);
-    }
-    inline void Deserialize(Message& m)
-    {
-        m.pop_front(field);
-        m.pop_front(field2);
-        m.pop_front(ints);
-    }*/
-};
+#include "s_game.hpp"
 
 int main()
 {
-    SomeStruct s = {1, "aaa", {01, 2, 4}};
-    Message m;
-    m.push_back(s);
-
-    auto s_ = SomeStruct();
-    m.pop_front(s_);
-    std::cout << s_.field2 << '\n';
-
+    S_game game(30020);
+    bool running = true;
+    auto run = std::thread([&]() {
+        while (running)
+        {
+            game.Tick(0.01f);
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+    });
+    std::cin.get();
+    running = false;
+    run.join();
     /*
     ConnectionAcceptor acceptor(30020);
     std::vector<Client> clients;
