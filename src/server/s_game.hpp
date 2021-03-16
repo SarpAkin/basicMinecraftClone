@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <type_traits>
+#include <set>
 
 #include "../common/game.hpp"
 #include "../common/net/connectionAcceptor.hpp"
@@ -19,9 +20,11 @@ class S_game : public Game, private ConnectionAcceptor<customClientFields>
 {
 private:
     TGen tgen;
-    // Entity spawning and storing
+
     vectorBasedDic<std::weak_ptr<Entity>> Entities;
-    //
+    
+    //chunk request
+    std::unordered_map<Vector2Int,std::set<int>,Hasher<Vector2Int>, Equal<Vector2Int>> requestedChukns;
 
 private:
     void GetChunks();//Gets the generated chunks from tgen.
@@ -30,6 +33,8 @@ public:
     Message S_EntitySpawned(EntityID id);
     Message S_PlayerSpawned(EntityID id);
     Message S_LoadChunk(Chunk& c);
+
+    void R_RequestChunk(M_P_ARGS_T);
     //
     S_game(uint16_t port);
     ~S_game();

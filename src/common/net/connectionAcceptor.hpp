@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include <set>
+
 #include "connection.hpp"
 
 namespace asio = boost::asio;
@@ -37,8 +39,10 @@ private:
     uint32_t clCounter = 0;
     std::thread ic_thread;
     tcp::acceptor connection_acceptor;
+
 protected:
     std::vector<Client> clients;
+
 private:
     bool VerifyConnection(tcp::socket& socket_);
 
@@ -86,6 +90,18 @@ public:
         SendMessageToAll_(m, ignore);
     }
 
+    inline void SendMessage(std::shared_ptr<const Message> m, std::vector<int32_t> ClientIDs)
+    {
+        for (auto cID : ClientIDs)
+            SendMessage_(m, cID);
+    }
+
+    inline void SendMessage(std::shared_ptr<const Message> m, std::set<int32_t> ClientIDs)
+    {
+        for (auto cID : ClientIDs)
+            SendMessage_(m, cID);
+    }
+
     inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, int32_t ClientID)
     {
         SendMessage_(m, ClientID);
@@ -94,6 +110,18 @@ public:
     inline void SendMessageToAll(std::vector<std::shared_ptr<const Message>> m, int32_t ignore = -1)
     {
         SendMessageToAll_(m, ignore);
+    }
+
+    inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, std::set<int32_t> ClientIDs)
+    {
+        for (auto cID : ClientIDs)
+            SendMessage_(m, cID);
+    }
+
+    inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, std::vector<int32_t> ClientIDs)
+    {
+        for (auto cID : ClientIDs)
+            SendMessage_(m, cID);
     }
 
     inline std::vector<Client> GetClients()
@@ -111,7 +139,7 @@ public:
 
 #include "../utility.hpp"
 
-//macro for class name 
+// macro for class name
 #define CON_ACC_CL(retType)                                                                                            \
     template <typename customClientField>                                                                              \
     retType ConnectionAcceptor<customClientField>
@@ -182,7 +210,7 @@ CON_ACC_CL(void)::AcceptConnections()
 
             client.id = cnum;
             client.connection = std::make_unique<Connection>(std::move(_socket), ic);
-            //client.connection->SetTName(std::string("client ") + std::to_string(client.id) + " ");
+            // client.connection->SetTName(std::string("client ") + std::to_string(client.id) + " ");
             clientV_mut.lock();
             new_clients.push_back(std::move(client));
             clientV_mut.unlock();

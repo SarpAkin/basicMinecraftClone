@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <iostream>
 #include <memory>
+#include <assert.h>
 #include <array>
 
 #include "utility.hpp"

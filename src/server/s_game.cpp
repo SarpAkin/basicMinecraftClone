@@ -22,17 +22,6 @@ S_game::~S_game()
 {
 }
 
-void S_game::ProcessMessageCustom(MessageTypes mtype, M_P_ARGS_T)
-{
-    switch (mtype)
-    {
-
-    default:
-        std::cerr << "Unsupported message type : " << mtype << " aserting\n";
-        break;
-    }
-}
-
 void S_game::GetChunks()
 {
     auto TGenOutChunks = tgen.GetChunks();
@@ -41,18 +30,34 @@ void S_game::GetChunks()
         auto pos = c->pos;
 
         c->Init(chunks);
+        SendMessage(ToSendableM(S_LoadChunk(*c)),requestedChukns[pos]);
+        requestedChukns.erase(pos);
         chunks[pos] = std::move(c);
+
     }
 }
 
 void S_game::Tick(float deltaT)
 {
     GetChunks();
+    // Tick chunks
     for (auto& chunk : chunks)
     {
         if (chunk.second)
             chunk.second->Tick(deltaT);
     }
+    //
+
+    // handle messages
+    for (auto& c : clients)
+    {
+        auto Messages = c.connection->inqueue.GetDeque();
+        for (auto& m : Messages)
+        {
+            ProcessMessages(m, c.id);
+        }
+    }
+    //
     ConnectionAcceptor::Tick();
 }
 
@@ -105,6 +110,17 @@ void S_game::OnClientJoin(Client& c)
 
 // Messages
 
+void S_game::ProcessMessageCustom(MessageTypes mtype, M_P_ARGS_T)
+{
+    switch (mtype)
+    {
+        M_P_CASE(RequestChunk);
+    default:
+        std::cerr << "Unsupported message type : " << mtype << " aserting\n";
+        break;
+    }
+}
+
 Message S_game::S_EntitySpawned(EntityID id)
 {
     Message m;
@@ -134,4 +150,25 @@ Message S_game::S_LoadChunk(Chunk& c)
     m.push_back(c.pos);
     m.push_back(c);
     return m;
+}
+
+void S_game::R_RequestChunk(M_P_ARGS_T)
+{
+    std::vector<Vector2Int> chunksposes;
+    m.pop_front(chunksposes);
+    for (auto pos : chunksposes)
+    {
+        std::cout << pos.x << ' ' << pos.y << '\n';//
+        if (auto& c = chunks[pos])
+        {
+            SendMessage(ToSendableM(S_LoadChunk(*c)),ClientID);
+        }
+        else
+        {
+            
+            if(!requestedChukns[pos].size())
+                tgen.GenerateChunk(pos);
+            requestedChukns[pos].emplace(ClientID);
+        }
+    }
 }

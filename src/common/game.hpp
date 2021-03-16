@@ -16,8 +16,8 @@
 #include "noise.hpp"
 #include "vectors.hpp"
 
-#define M_P_ARGS_T Message& m //Arguments for functions
-#define M_P_ARGS m//variables in the arguments of the function
+#define M_P_ARGS_T Message& m,int ClientID //Arguments for functions
+#define M_P_ARGS m,ClientID//variables in the arguments of the function
 
 #define M_P_CASE(m_enum)                                                                                               \
     case MessageTypes::m_enum:                                                                                         \
@@ -30,6 +30,7 @@ enum MessageTypes : uint16_t
     EntitySpawned,
     PlayerSpawned,
     LoadChunk,
+    RequestChunk,
 };
 
 class Game
