@@ -1,10 +1,18 @@
 #pragma once
 
-#include "utility.hpp"
-
+#include <glm/ext/matrix_float4x4.hpp>
 #include <inttypes.h>
 
+#include "utility.hpp"
 #include "vectors.hpp"
+
+#ifndef SERVER_SIDE
+
+#include "../client/render/IndexBuffer.hpp"
+#include "../client/render/VertexBuffer.hpp"
+#include "../client/render/VertexBufferLayout.hpp"
+
+#endif
 
 typedef uint32_t EntityID;
 
@@ -23,30 +31,45 @@ struct Transform
         pos = v - (size * .05f);
     }
     Transform() = default;
-    inline Transform(Vector3 pos_,Vector3 size_)
+    inline Transform(Vector3 pos_, Vector3 size_)
     {
         pos = pos_;
         size = size_;
     }
 };
 
+class Renderer;
 class Game;
 class Chunk;
 
 class Entity
 {
 private:
+#ifndef SERVER_SIDE
+    VertexBuffer vBuf;
+    IndexBuffer iBuf;
+#endif
 
 public:
     EntityID entityID;
     Chunk* currentChunk = nullptr;
     Transform transform;
-private://func
+    #ifndef SERVER_SIDE
+    bool isVisible = true;
+    bool isMeshinitilized = false;
+    #endif
+private: // func
 public:
     void Serialize(Message& m);
-    bool Deserialize(Message& m,Game* g);
+    bool Deserialize(Message& m, Game* g);
 
     Entity();
     ~Entity();
 
+#ifndef SERVER_SIDE
+    void InitMesh();
+    void Draw(glm::mat4x4 mv, Renderer& r);
+    
+    static void StaticInit();
+#endif
 };

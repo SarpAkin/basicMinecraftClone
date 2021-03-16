@@ -2,9 +2,9 @@
 
 #include <pthread.h>
 
+#include <iostream>
 #include <string>
 #include <thread>
-#include <iostream>
 
 std::string readFile(const char* file)
 {
@@ -13,9 +13,11 @@ std::string readFile(const char* file)
     if (stream.is_open())
         return std::string(std::istreambuf_iterator<char>(stream), {});
     else
+    {
+        std::cerr << "can't open the file with the name : " << file << '\n';
         return std::string();
+    }
 }
-
 
 Vector2 rotateVectorInRadians(Vector2 v, float radian)
 {
@@ -25,18 +27,17 @@ Vector2 rotateVectorInRadians(Vector2 v, float radian)
     return retV;
 }
 
-void SetThreadName(std::thread& t,const char* name)
+void SetThreadName(std::thread& t, const char* name)
 {
-    if(std::string(name).length() > 16)
+    if (std::string(name).length() > 16)
         std::cerr << "name is too big\n";
-    pthread_setname_np(t.native_handle(),name);
+    pthread_setname_np(t.native_handle(), name);
 }
 
 void SetThreadName(const char* name)
 {
-    if(std::string(name).length() > 16)
+    if (std::string(name).length() > 16)
         std::cerr << "name is too big\n";
     std::cout << name << '\n';
-    pthread_setname_np(pthread_self(),name);
+    pthread_setname_np(pthread_self(), name);
 }
-

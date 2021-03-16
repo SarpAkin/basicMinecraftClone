@@ -35,6 +35,7 @@ public:
     Message S_LoadChunk(Chunk& c);
 
     void R_RequestChunk(M_P_ARGS_T);
+    void R_EntityMoved(M_P_ARGS_T) override;
     //
     S_game(uint16_t port);
     ~S_game();

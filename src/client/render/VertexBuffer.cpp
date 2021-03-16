@@ -2,9 +2,7 @@
 
 #include "opengl_.hpp"
 
-
-
-void  VertexBuffer::Construct(const void* data, std::size_t size)
+void VertexBuffer::Construct(const void* data, std::size_t size)
 {
     GLCALL(glGenBuffers(1, &bufferID));
     GLCALL(glBindBuffer(GL_ARRAY_BUFFER, bufferID));
@@ -13,8 +11,10 @@ void  VertexBuffer::Construct(const void* data, std::size_t size)
 
 VertexBuffer::~VertexBuffer()
 {
-    if (bufferID)
+    if (bufferID != 0)
+    {
         GLCALL(glDeleteBuffers(1, &bufferID));
+    }
 }
 
 void VertexBuffer::Bind() const

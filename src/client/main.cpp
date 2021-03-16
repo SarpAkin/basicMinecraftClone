@@ -43,91 +43,6 @@ public:
         player = game.Player.lock();
     }
 
-    void DrawEast(Chunk* c, int range, Vector2Int pos)
-    {
-        if (c)
-        {
-            if (range)
-            {
-                ChunkMeshGPU::Draw(*c, proj * view, pos);
-                DrawEast(c->easternChunk, range - 1, {pos.x + 1, pos.y});
-            }
-        }
-        else
-        {
-            game.requestChunk(pos + player->currentChunk->pos);
-        }
-    }
-
-    void DrawWest(Chunk* c, int range, Vector2Int pos)
-    {
-        if (c)
-        {
-            if (range)
-            {
-                ChunkMeshGPU::Draw(*c, proj * view, pos);
-                DrawWest(c->westernChunk, range - 1, {pos.x - 1, pos.y});
-            }
-        }
-        else
-        {
-            game.requestChunk(pos + player->currentChunk->pos);
-        }
-    }
-
-    void DrawSouth(Chunk* c, int range, Vector2Int pos)
-    {
-        if (c)
-        {
-            if (range)
-            {
-                ChunkMeshGPU::Draw(*c, proj * view, pos);
-                DrawSouth(c->southernChunk, range - 1, {pos.x, pos.y - 1});
-                DrawWest(c->westernChunk, range - 1, {pos.x - 1, pos.y});
-                DrawEast(c->easternChunk, range - 1, {pos.x + 1, pos.y});
-            }
-        }
-        else
-        {
-            game.requestChunk(pos + player->currentChunk->pos);
-        }
-    }
-
-    void DrawNorth(Chunk* c, int range, Vector2Int pos)
-    {
-        if (c)
-        {
-            if (range)
-            {
-                ChunkMeshGPU::Draw(*c, proj * view, pos);
-                DrawNorth(c->northernChunk, range - 1, {pos.x, pos.y + 1});
-                DrawWest(c->westernChunk, range - 1, {pos.x - 1, pos.y});
-                DrawEast(c->easternChunk, range - 1, {pos.x + 1, pos.y});
-            }
-        }
-        else
-        {
-            game.requestChunk(pos + player->currentChunk->pos);
-        }
-    }
-
-    void DrawChunksInRange(Chunk* c, int range = 10)
-    {
-        Vector2Int pos = {0, 0};
-        if (c)
-        {
-            ChunkMeshGPU::Draw(*c, proj * view, pos);
-            DrawNorth(c->northernChunk, range - 1, {pos.x, pos.y + 1});
-            DrawSouth(c->southernChunk, range - 1, {pos.x, pos.y - 1});
-            DrawWest(c->westernChunk, range - 1, {pos.x - 1, pos.y});
-            DrawEast(c->easternChunk, range - 1, {pos.x + 1, pos.y});
-        }
-        else
-        {
-            game.requestChunk(pos + player->currentChunk->pos);
-        }
-    }
-
     void OnStart() override
     {
         auto player_ = std::make_unique<Entity>();
@@ -137,10 +52,12 @@ public:
         proj = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 10000.0f);
 
         ChunkMeshGPU::staticInit();
+        Entity::StaticInit();
     }
 
     void UpdateCamera(double DeltaT)
     {
+        game.Player.lock()->InitMesh();
         Transform& viewPos = player->transform;
         pitch += -MouseYRaw;
         yaw += MouseXRaw;
@@ -196,7 +113,10 @@ public:
         game.Tick(DeltaT);
         UpdateCamera(DeltaT);
 
-        DrawChunksInRange(player->currentChunk, 10);
+        auto tmp = ChunksInRange(
+            player->currentChunk,
+            [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { ChunkMeshGPU::Draw(c, proj * view, r_pos,*this); },
+            [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { game.requestChunk(f_pos); }, 10);
     }
 };
 

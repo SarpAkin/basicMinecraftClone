@@ -18,4 +18,4 @@ void ResolveAABBCollision(Transform& current, const Transform& other);
 
 void simulatePhysics(Transform& current,const std::vector<Transform>& others, float deltaT);
 
-void ChunkVSAABB(std::vector<std::shared_ptr<Entity>>::iterator e_it, float deltaT);
+bool ChunkVSAABB(std::vector<std::shared_ptr<Entity>>::iterator e_it, float deltaT);

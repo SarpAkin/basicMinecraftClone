@@ -12,6 +12,7 @@ C_game::C_game(uint16_t port, const char* ip) : Game(), Client(port, ip)
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
         Tick(0.002f);
     }
+    Player.lock()->isVisible = false;
 }
 
 void C_game::Tick(float deltaT)
@@ -19,29 +20,36 @@ void C_game::Tick(float deltaT)
     auto Messages = connection->inqueue.GetDeque();
     for (auto& m : Messages)
     {
-        ProcessMessages(m,-1);
+        ProcessMessages(m, -1);
     }
+
+    // Tick schedular
+    schedular.Tick();
+
     if (auto player_ = Player.lock())
     {
         auto& chunkEnt = player_->currentChunk->Entities;
-        for (auto it = chunkEnt.begin();it != chunkEnt.end();++it)
+        for (auto it = chunkEnt.begin(); it != chunkEnt.end(); ++it)
             if (*it == player_)
             {
-                ChunkVSAABB(it, deltaT);
+                if (ChunkVSAABB(it, deltaT))
+                {
+                    connection->Send(ToSendableM(S_EntityMoved(*player_)));
+                }
                 break;
             }
     }
 
-    //Request chunks
+    // Request chunks
     connection->Send(ToSendableM(S_RequestChunk(std::move(requestCBuffer))));
-    //requestedChunks.clear();
+    // requestedChunks.clear();
     //
 }
 
 void C_game::requestChunk(Vector2Int pos)
 {
-    //std::cout << "aa\n";
-    if(!requestedChunks.contains(pos))
+    // std::cout << "aa\n";
+    if (!requestedChunks.contains(pos))
     {
         requestedChunks.emplace(pos);
         requestCBuffer.push_back(pos);
@@ -53,7 +61,7 @@ std::shared_ptr<Entity> C_game::GetEntity(EntityID id)
     return Entities[id].lock();
 }
 
-//Messages
+// Messages
 void C_game::ProcessMessageCustom(MessageTypes mtype, M_P_ARGS_T)
 {
     switch (mtype)
@@ -84,8 +92,10 @@ void C_game::R_EntitySpawned(M_P_ARGS_T)
     auto e = std::make_shared<Entity>();
     if (e->Deserialize(m, this))
     {
-        e->currentChunk->Entities.push_back(e);
+        std::cout << e->transform.pos.x << ' ' << e->transform.pos.y << ' ' << e->transform.pos.z << '\n';
+         e->currentChunk->Entities.push_back(e);
         Entities[id] = e;
+        
     }
 }
 

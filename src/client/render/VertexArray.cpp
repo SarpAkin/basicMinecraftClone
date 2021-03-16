@@ -1,10 +1,8 @@
 #include "VertexArray.hpp"
 
-#include "opengl_.hpp"
-#include "VertexBufferLayout.hpp"
 #include "VertexBuffer.hpp"
-
-
+#include "VertexBufferLayout.hpp"
+#include "opengl_.hpp"
 
 VertexArray::VertexArray()
 {
@@ -13,8 +11,10 @@ VertexArray::VertexArray()
 
 VertexArray::~VertexArray()
 {
-    if (arrayID)
+    if (arrayID != 0)
+    {
         GLCALL(glDeleteVertexArrays(1, &arrayID));
+    }
 }
 
 void VertexArray::Bind() const
@@ -28,11 +28,12 @@ void VertexArray::AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& la
     vb.Bind();
     const auto& elements = layout.getElements();
     uint32_t offset = 0;
-    for (uint32_t i = 0;i < elements.size();++i)
+    for (uint32_t i = 0; i < elements.size(); ++i)
     {
         const auto& element = elements[i];
         GLCALL(glEnableVertexAttribArray(i));
-        GLCALL(glVertexAttribPointer(i, element.count, element.type, element.normalized, layout.getStride(), (const void*)(size_t)offset));
+        GLCALL(glVertexAttribPointer(i, element.count, element.type, element.normalized, layout.getStride(),
+            (const void*)(size_t)offset));
         offset += element.size;
     }
 }

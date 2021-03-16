@@ -13,9 +13,8 @@ class VertexBuffer
     friend VertexArray;
 private:
     uint32_t bufferID = 0;
+public:
     VertexArray va = VertexArray(0);
-
-private:
 public:
     VertexBuffer() = default;
     void Construct(const void* data, std::size_t size);

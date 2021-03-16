@@ -160,7 +160,7 @@ CON_ACC_CL(void)::Tick()
     for (auto& c : new_clients)
     {
         clients.push_back(std::move(c));
-        OnClientJoin(c);
+        OnClientJoin(clients.back());
     }
     new_clients.clear();
     clientV_mut.unlock();

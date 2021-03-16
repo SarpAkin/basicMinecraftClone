@@ -1,19 +1,18 @@
 #pragma once
 
-#include <unordered_map>
+#include <array>
+#include <assert.h>
+#include <functional>
 #include <inttypes.h>
 #include <iostream>
 #include <memory>
-#include <assert.h>
-#include <array>
+#include <unordered_map>
 
-#include "utility.hpp"
-#include "vectors.hpp"
 #include "Entity.hpp"
 #include "hasher.hpp"
 #include "tile.hpp"
-
-
+#include "utility.hpp"
+#include "vectors.hpp"
 
 const int chunk_size = 16;
 const int chunk_area = chunk_size * chunk_size;
@@ -24,9 +23,12 @@ const int max_block_height = chunk_size * vertical_chunk_count;
 
 enum class direction : uint8_t
 {
-    up, down,
-    north, south,
-    west, east
+    up,
+    down,
+    north,
+    south,
+    west,
+    east
 };
 
 struct ChunkVertex
@@ -35,12 +37,13 @@ struct ChunkVertex
     Vector2 textpos;
     inline ChunkVertex()
     {
-        pos = { 0,0,0 };
-        textpos = { 0,0 };
+        pos = {0, 0, 0};
+        textpos = {0, 0};
     }
     inline ChunkVertex(Vector3 pos_, Vector2 textpos_)
     {
-        pos = pos_;textpos = textpos_;
+        pos = pos_;
+        textpos = textpos_;
     }
 };
 
@@ -76,14 +79,13 @@ class Chunk
 {
     friend TGen;
     friend Game;
-    
+
     class TileRef
     {
         friend Chunk;
         Chunk& chunk;
         Vector3Int pos;
-        inline TileRef(Chunk& c, Vector3Int p)
-            :chunk(c)
+        inline TileRef(Chunk& c, Vector3Int p) : chunk(c)
         {
             pos = p;
         }
@@ -92,19 +94,21 @@ class Chunk
         void operator=(Tile);
         operator Tile() const;
     };
-private:
 
+private:
     std::array<std::unique_ptr<std::array<Tile, chunk_volume>>, vertical_chunk_count> grid;
+
 public:
-    Chunk* northernChunk = nullptr; //z+
-    Chunk* southernChunk = nullptr; //z-
-    Chunk* easternChunk = nullptr; //x+
-    Chunk* westernChunk = nullptr; //x-
-//public:
+    Chunk* northernChunk = nullptr; // z+
+    Chunk* southernChunk = nullptr; // z-
+    Chunk* easternChunk = nullptr;  // x+
+    Chunk* westernChunk = nullptr;  // x-
+    // public:
     Vector2Int pos;
     ChunkMeshGPU* GPUMesh = nullptr;
     std::unique_ptr<ChunkGenData> chunkGenData;
     std::vector<std::shared_ptr<Entity>> Entities;
+
 private:
     inline void exc()
     {
@@ -113,8 +117,7 @@ private:
     }
 
 public:
-
-    GEN_SERIALIZATION_FUNCTIONS(pos,grid);
+    GEN_SERIALIZATION_FUNCTIONS(pos, grid);
 
     /*use [] operator instead of this!*/
     TileRef findBlockInChunk(Vector3Int);
@@ -132,7 +135,18 @@ public:
         return pos;
     }
 
-    inline void MoveEntity(std::vector<std::shared_ptr<Entity>>::iterator e_it,Chunk& new_chunk)
+    inline std::vector<std::shared_ptr<Entity>>::iterator GetEntityIt(std::shared_ptr<Entity> ent)
+    {
+        auto& chunkEnt = ent->currentChunk->Entities;
+        for (auto it = chunkEnt.begin(); it != chunkEnt.end(); ++it)
+            if (*it == ent)
+            {
+                return it;
+            }
+        return chunkEnt.end();
+    }
+
+    inline void MoveEntity(std::vector<std::shared_ptr<Entity>>::iterator e_it, Chunk& new_chunk)
     {
         (**e_it).currentChunk = &new_chunk;
         new_chunk.Entities.push_back(std::move(*e_it));
@@ -144,22 +158,33 @@ public:
     void Tick(float deltaT);
     inline static Vector2Int ToChunkCord(Vector2Int in)
     {
-        return Vector2Int(
-            in.x >= 0 ? in.x / chunk_size : (in.x - (chunk_size - 1)) / chunk_size,
-            in.y >= 0 ? in.y / chunk_size : (in.y - (chunk_size - 1)) / chunk_size
-        );
+        return Vector2Int(in.x >= 0 ? in.x / chunk_size : (in.x - (chunk_size - 1)) / chunk_size,
+            in.y >= 0 ? in.y / chunk_size : (in.y - (chunk_size - 1)) / chunk_size);
     }
     inline static Vector2Int ToChunkCord(Vector3 in)
     {
-        return Vector2Int(
-            in.x >= 0 ? in.x / chunk_size : (std::ceil(in.x) / chunk_size) - 1,
-            in.z >= 0 ? in.z / chunk_size : (std::ceil(in.z) / chunk_size) - 1
-        );
+        return Vector2Int(in.x >= 0 ? in.x / chunk_size : (std::ceil(in.x) / chunk_size) - 1,
+            in.z >= 0 ? in.z / chunk_size : (std::ceil(in.z) / chunk_size) - 1);
     }
 
     void Init(std::unordered_map<Vector2Int, std::unique_ptr<Chunk>, Hasher<Vector2Int>, Equal<Vector2Int>>& Chunks);
     ChunkMesh GenMesh() const;
 
-    Tile operator[] (Vector3Int pos) const;
-    TileRef operator[] (Vector3Int pos);
+    Tile operator[](Vector3Int pos) const;
+    TileRef operator[](Vector3Int pos);
+};
+
+class ChunksInRange
+{
+    typedef std::function<void(Chunk& c, Vector2Int r_pos, Vector2Int f_pos)> func;
+    func forEachChunk, ifDoesntExist;
+    Vector2Int midPos;
+
+    void East(Chunk* c, int range, Vector2Int pos);
+    void West(Chunk* c, int range, Vector2Int pos);
+    void South(Chunk* c, int range, Vector2Int pos);
+    void North(Chunk* c, int range, Vector2Int pos);
+
+public:
+    ChunksInRange(Chunk* c, func forEachChunk_, func ifDoesntExist_, int range = 10);
 };

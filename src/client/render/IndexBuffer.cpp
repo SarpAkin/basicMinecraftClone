@@ -2,8 +2,6 @@
 
 #include "opengl_.hpp"
 
-
-
 void IndexBuffer::Construct(const void* data, std::size_t size_)
 {
     size = size_;
@@ -14,11 +12,13 @@ void IndexBuffer::Construct(const void* data, std::size_t size_)
 
 IndexBuffer::~IndexBuffer()
 {
-    if(bufferID)
-        GLCALL(glDeleteBuffers(1,&bufferID));
+    if (bufferID != 0)
+    {
+        GLCALL(glDeleteBuffers(1, &bufferID));
+    }
 }
 
 void IndexBuffer::Bind() const
 {
-    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,bufferID));
+    GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferID));
 }

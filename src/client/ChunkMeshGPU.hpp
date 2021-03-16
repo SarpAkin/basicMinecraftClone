@@ -12,6 +12,7 @@
 
 #include "../common/vectors.hpp"
 
+class Renderer;
 
 class ChunkMeshGPU
 {
@@ -30,7 +31,7 @@ private:
     void Construct(ChunkMesh& mesh);
 public:
     ChunkMeshGPU() = default;
-    void Draw(Mat4x4 mvp,Vector2Int pos_);
+    void Draw(Mat4x4 mvp,Chunk& c,Vector2Int pos_,Renderer& r);
     static void staticInit();
 
     inline ChunkMeshGPU(Chunk& c)
@@ -40,15 +41,15 @@ public:
         Construct(mesh);
     }
 
-    inline static void Draw(Chunk& c,Mat4x4 mvp,Vector2Int pos_)
+    inline static void Draw(Chunk& c,Mat4x4 mvp,Vector2Int pos_,Renderer& r)
     {
         ChunkMeshGPU*& mesh = c.GPUMesh;
         if(mesh)
-            mesh->Draw(mvp,pos_);
+            mesh->Draw(mvp,c,pos_,r);
         else
         {
             mesh = new ChunkMeshGPU(c);
-            mesh->Draw(mvp,pos_);
+            mesh->Draw(mvp,c,pos_,r);
         }
     }
     

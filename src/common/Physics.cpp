@@ -81,7 +81,7 @@ void simulatePhysics(Transform& current, const std::vector<Transform>& others, f
     current.velocity = (current.pos - startPos) / deltaT;
 }
 
-void ChunkVSAABB(std::vector<std::shared_ptr<Entity>>::iterator e_it, float deltaT)
+bool ChunkVSAABB(std::vector<std::shared_ptr<Entity>>::iterator e_it, float deltaT)
 {
     auto& e = **e_it;
     const auto& c = *e.currentChunk;
@@ -101,8 +101,9 @@ void ChunkVSAABB(std::vector<std::shared_ptr<Entity>>::iterator e_it, float delt
                     blockColliders.emplace_back(Vector3(x, y, z) + Vector3(-.5f, -.5f, -.5f), Vector3(1, 1, 1));
                 }
             }
-
+    auto prePos = t.pos;
     simulatePhysics(t, blockColliders, deltaT);
+    bool retVal = t.pos != prePos;
     const int eRange = 2;
     if (t.pos.x < -eRange)
     {
@@ -137,4 +138,5 @@ void ChunkVSAABB(std::vector<std::shared_ptr<Entity>>::iterator e_it, float delt
             e.currentChunk->MoveEntity(e_it, *e.currentChunk->northernChunk);
         }
     }
+    return retVal;
 }

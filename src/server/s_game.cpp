@@ -30,10 +30,9 @@ void S_game::GetChunks()
         auto pos = c->pos;
 
         c->Init(chunks);
-        SendMessage(ToSendableM(S_LoadChunk(*c)),requestedChukns[pos]);
+        SendMessage(ToSendableM(S_LoadChunk(*c)), requestedChukns[pos]);
         requestedChukns.erase(pos);
         chunks[pos] = std::move(c);
-
     }
 }
 
@@ -58,6 +57,7 @@ void S_game::Tick(float deltaT)
         }
     }
     //
+    schedular.Tick();
     ConnectionAcceptor::Tick();
 }
 
@@ -79,17 +79,19 @@ std::shared_ptr<Entity> S_game::SpawnEntity(std::unique_ptr<Entity> e_, Chunk& c
 
 void S_game::OnClientJoin(Client& c)
 {
+    //Send the chunk first so entities can be spawned
+    Chunk& spawnChunk = *chunks[{0, 0}];
+    SendMessage(ToSendableM(S_LoadChunk(spawnChunk)), c.id);
     // Send all entitites
     for (auto& e_ : Entities.items)
     {
-        if (auto e = e_.lock())
+        auto e = e_.lock();
+        if (e)
         {
-            SendMessage(ToSendableM(S_EntitySpawned(e->entityID)), c.id);
+            c.connection->Send(ToSendableM(S_EntitySpawned(e->entityID)));
         }
     }
     //
-    Chunk& spawnChunk = *chunks[{0, 0}];
-    SendMessage(ToSendableM(S_LoadChunk(spawnChunk)), c.id);
     auto ent = std::make_unique<Entity>();
     ent->transform.pos = {8, 0, 8};
     // find the first air block available
@@ -158,17 +160,37 @@ void S_game::R_RequestChunk(M_P_ARGS_T)
     m.pop_front(chunksposes);
     for (auto pos : chunksposes)
     {
-        std::cout << pos.x << ' ' << pos.y << '\n';//
+        // std::cout << pos.x << ' ' << pos.y << '\n';//
         if (auto& c = chunks[pos])
         {
-            SendMessage(ToSendableM(S_LoadChunk(*c)),ClientID);
+            SendMessage(ToSendableM(S_LoadChunk(*c)), ClientID);
         }
         else
         {
-            
-            if(!requestedChukns[pos].size())
+
+            if (!requestedChukns[pos].size())
                 tgen.GenerateChunk(pos);
             requestedChukns[pos].emplace(ClientID);
         }
+    }
+}
+
+void S_game::R_EntityMoved(M_P_ARGS_T)
+{
+    auto e = GetEntity(m.pop_front<EntityID>());
+    if (e)
+    {
+        m.pop_front(e->transform.pos);
+        Vector2Int c_pos;
+        m.pop_front(c_pos);
+        if (e->currentChunk->pos != c_pos)
+        {
+            e->currentChunk->MoveEntity(e->currentChunk->GetEntityIt(e), *chunks[c_pos]);
+        }
+        SendMessageToAll(ToSendableM(S_EntityMoved(*e)),ClientID);
+    }
+    else
+    {
+        std::cerr << "Entity doesn't exist\n";
     }
 }
