@@ -1,5 +1,6 @@
 #include "c_game.hpp"
 
+#include <chrono>
 #include <memory>
 #include <utility>
 
@@ -13,6 +14,18 @@ C_game::C_game(uint16_t port, const char* ip) : Game(), Client(port, ip)
         Tick(0.002f);
     }
     Player.lock()->isVisible = false;
+
+    schedular.SchedulRepeatingFunc(
+        [this]() {
+            auto p = Player.lock();
+            if (p != nullptr)
+            {
+                ChunksInRange(
+                    p->currentChunk, [](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) {},
+                    [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { requestChunk(f_pos); });
+            }
+        },
+        1, 20);
 }
 
 void C_game::Tick(float deltaT)
@@ -79,7 +92,7 @@ void C_game::R_LoadChunk(M_P_ARGS_T)
 {
     auto c_pos = m.pop_front<Vector2Int>();
     requestedChunks.erase(c_pos);
-    auto chunk = std::make_unique<Chunk>();
+    MEASURE_TIME(auto chunk = std::make_unique<Chunk>());
     m.pop_front(*chunk);
     chunk->Init(chunks); // init chunk
     chunks[c_pos] = std::move(chunk);
@@ -93,9 +106,8 @@ void C_game::R_EntitySpawned(M_P_ARGS_T)
     if (e->Deserialize(m, this))
     {
         std::cout << e->transform.pos.x << ' ' << e->transform.pos.y << ' ' << e->transform.pos.z << '\n';
-         e->currentChunk->Entities.push_back(e);
+        e->currentChunk->Entities.push_back(e);
         Entities[id] = e;
-        
     }
 }
 

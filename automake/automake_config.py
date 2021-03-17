@@ -4,7 +4,7 @@ compiler = "clang++"
 cflags = "-std=c++20 -Wall -Wno-unused-command-line-argument -Wno-unused-variable -Ivendor -lpthread"
 shared_src = ["src/common","vendor/vendorCompiled"]
 
-debug_cflags = "-D_GLIBCXX_DEBUG -g -DDEBUG -O0"
+debug_cflags = "-D_GLIBCXX_DEBUG -g -DDEBUG -O3"
 
 opengl_flags = "-lGL -lGLU -lglfw3 -lX11 -lXxf86vm -lXrandr -lXi -ldl -lXinerama -lXcursor -Ivendor/glm/glm  -DGLEW_STATIC /usr/lib64/libGLEW.a"
 

@@ -14,8 +14,11 @@ static_assert("ASSERT is defined!\n");
     static_assert("Not in the DEBUG mode!\n");
 #endif
 
-#ifdef DEBUG
+//#define DEBUG
+
+#ifdef DEBUG 
 #define ASSERT(x) assert(x);
+
 #define GLCALL(x) clearGLErrors();\
     x;\
     assert(logGLCalls());

@@ -11,7 +11,7 @@ void VertexBuffer::Construct(const void* data, std::size_t size)
 
 VertexBuffer::~VertexBuffer()
 {
-    if (bufferID != 0)
+    if (bufferID)
     {
         GLCALL(glDeleteBuffers(1, &bufferID));
     }

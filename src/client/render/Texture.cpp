@@ -9,7 +9,6 @@ void Texture::construct(const std::string& path)
     u_char* localBuffer;
     localBuffer = stbi_load(path.c_str(), &width, &height, &BPP, 4);
 
-
     GLCALL(glGenTextures(1, &TextureID));
     GLCALL(glBindTexture(GL_TEXTURE_2D, TextureID));
 
@@ -28,7 +27,9 @@ void Texture::construct(const std::string& path)
 Texture::~Texture()
 {
     if (TextureID)
+    {
         GLCALL(glDeleteTextures(1, &TextureID));
+    }
 }
 
 void Texture::Bind(uint32_t slot) const

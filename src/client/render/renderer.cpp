@@ -1,10 +1,9 @@
 #include <chrono>
+#include <unordered_map>
 
 #include "renderer.hpp"
 
-std::array<uint8_t, KeyCount> Renderer::keyMap;
-double Renderer::MouseXRaw;
-double Renderer::MouseYRaw;
+
 
 void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader)
 {
@@ -24,19 +23,30 @@ void Renderer::DrawU16(const VertexArray& va, const IndexBuffer& ib, const Shade
 
 void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
     if (key < KeyCount &&key >= 0)
-        keyMap[key] = action;
+        renderer->keyMap[key] = action;
     //std::cout << action << ' ' << key << '\n';
 }
 
-double oldxpos = 0;
-double oldypos = 0;
+void Renderer::Screen_Resize_Callback(GLFWwindow* window,int width_,int height_)
+{
+    //GLCALL(glfwSetWindowSize(window, width_, height_));
+    GLCALL(glViewport(0, 0,width_,height_));
+    std::cout << "aaaaa\n";
+    Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
+    renderer->width = width_;
+    renderer->height = height_;
+    renderer->OnScreenResize();
+}
+
 void Renderer::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    MouseXRaw = xpos - oldxpos;
-    MouseYRaw = ypos - oldypos;
-    oldxpos = xpos;
-    oldypos = ypos;
+    Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
+    renderer->MouseXRaw = xpos - renderer->oldxpos;
+    renderer->MouseYRaw = ypos - renderer->oldypos;
+    renderer->oldxpos = xpos;
+    renderer->oldypos = ypos;
 }
 
 bool Renderer::Construct(int width_, int height_)
@@ -54,6 +64,9 @@ bool Renderer::Construct(int width_, int height_)
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
+
+    GLCALL(glfwSetWindowUserPointer(window,this));
+
     if (!window)
     {
         GLCALL(glfwTerminate());
@@ -80,6 +93,7 @@ bool Renderer::Construct(int width_, int height_)
     //Get keyboard-mouse input
     GLCALL(glfwSetKeyCallback(window, key_callback));
     GLCALL(glfwSetCursorPosCallback(window, cursor_position_callback));
+    GLCALL(glfwSetWindowSizeCallback(window,Screen_Resize_Callback));
 
     //GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
     if (glfwRawMouseMotionSupported())

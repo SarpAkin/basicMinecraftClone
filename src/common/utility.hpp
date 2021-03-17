@@ -114,6 +114,11 @@ void DeserializeMultiple(Message& m, T& arg0, Types&... args)
     DeserializeMultiple(m, args...);
 }
 
+#define MEASURE_TIME(func)\
+    auto s = std::chrono::steady_clock::now();\
+    func;\
+    std::cout << "time elapsed :" << ((double)(std::chrono::steady_clock::now() - s).count()) / 1000000  << "milliseconds" << std::endl;
+
 #define GEN_SERIALIZATION_FUNCTIONS(fields...)                                                                         \
     inline void Serialize(Message& m) const                                                                            \
     {                                                                                                                  \

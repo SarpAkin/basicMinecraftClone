@@ -1,9 +1,11 @@
 #include <array>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <memory>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <thread>
 
 #include "render/IndexBuffer.hpp"
 #include "render/Texture.hpp"
@@ -41,6 +43,11 @@ public:
     TestRen() : Renderer(), game(30020, "127.0.0.1")
     {
         player = game.Player.lock();
+    }
+
+    void OnScreenResize() override
+    {
+        proj = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 10000.0f);
     }
 
     void OnStart() override
@@ -113,10 +120,10 @@ public:
         game.Tick(DeltaT);
         UpdateCamera(DeltaT);
 
-        auto tmp = ChunksInRange(
+        ChunksInRange(
             player->currentChunk,
-            [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { ChunkMeshGPU::Draw(c, proj * view, r_pos,*this); },
-            [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { game.requestChunk(f_pos); }, 10);
+            [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { ChunkMeshGPU::Draw(c, proj * view, r_pos, *this); },
+            [](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) {}, 10);
     }
 };
 
@@ -125,7 +132,11 @@ public:
 int main()
 {
 
-    TestRen t = TestRen();
-    if (t.Construct(1280, 720))
-        t.Start();
+    // MEASURE_TIME(std::this_thread::sleep_for(std::chrono::seconds(1)));
+    {
+        TestRen t = TestRen();
+        if (t.Construct(1280, 720))
+            t.Start();
+    }
+    GLCALL(glfwTerminate());
 }

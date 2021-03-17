@@ -122,6 +122,8 @@ void Chunk::updateMesh()
 #endif
 }
 
+
+//TODO optimze this
 ChunkMesh Chunk::GenMesh() const
 {
     ChunkMesh mesh_;
@@ -131,7 +133,7 @@ ChunkMesh Chunk::GenMesh() const
         VerticalChunkMesh& mesh = mesh_.meshes[i];
         if (grid[i] != nullptr)
         {
-            mesh.reserverSquares(1000);
+            mesh.reserverSquares(10000);
             for (int y = 0; y < chunk_size; ++y)
             {
                 int globalY = y + i * chunk_size;
@@ -271,7 +273,7 @@ void VerticalChunkMesh::addSquare(Vector3Int pos_, direction facing, uint16_t te
     // TODO measeure the atlas size and divide by atlas size
     float atlaspos = atlasTileX_Size * textureID;
     uint16_t VertexIndex = verticies.size();
-    switch (facing)
+    switch  (facing)
     {
 
     case direction::up:

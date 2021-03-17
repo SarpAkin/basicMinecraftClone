@@ -11,7 +11,7 @@ VertexArray::VertexArray()
 
 VertexArray::~VertexArray()
 {
-    if (arrayID != 0)
+    if (arrayID)
     {
         GLCALL(glDeleteVertexArrays(1, &arrayID));
     }

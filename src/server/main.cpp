@@ -21,6 +21,7 @@ int main()
             std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
     });
+    
     std::cin.get();
     running = false;
     run.join();

@@ -12,7 +12,7 @@ void IndexBuffer::Construct(const void* data, std::size_t size_)
 
 IndexBuffer::~IndexBuffer()
 {
-    if (bufferID != 0)
+    if (bufferID)
     {
         GLCALL(glDeleteBuffers(1, &bufferID));
     }

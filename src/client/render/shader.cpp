@@ -1,13 +1,12 @@
 #include "shader.hpp"
 
 #include <iostream>
-#include <string>
 #include <memory>
+#include <string>
 
 #include "opengl_.hpp"
 
 uint32_t ActiveShader = 0;
-
 
 uint32_t CreateShader(const std::string& vertexShader, const std::string& fragmentShader);
 
@@ -25,14 +24,16 @@ Shader::~Shader()
 {
 
     if (shaderID)
+    {
         GLCALL(glDeleteProgram(shaderID));
+    }
 }
 
 void Shader::Bind() const
 {
-    #ifdef DEBUG
+#ifdef DEBUG
     ActiveShader = shaderID;
-    #endif
+#endif
     GLCALL(glUseProgram(shaderID));
 }
 
@@ -58,9 +59,9 @@ void Shader::SetUniformMat4(std::string& uniform, glm::mat4 v0)
 
 int Shader::getUniformLocation(std::string& uniformName)
 {
-    #ifdef DEBUG 
-    assert(ActiveShader == shaderID);//shader hesn't bound;
-    #endif
+#ifdef DEBUG
+    assert(ActiveShader == shaderID); // shader hesn't bound;
+#endif
 
     auto it = uniformLocation.find(uniformName);
     if (it != uniformLocation.end())
@@ -83,7 +84,7 @@ int Shader::getUniformLocation(std::string& uniformName)
     }
 }
 
-//shader compilation
+// shader compilation
 uint32_t CompileShader(const std::string& sourceCode, uint32_t ShaderType)
 {
     uint32_t id = glCreateShader(ShaderType);

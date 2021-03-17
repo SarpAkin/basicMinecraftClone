@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <memory>
 #include <thread>
+#include <utility>
+#include <vector>
 
 //#include "TGen.hpp"
 
@@ -30,9 +32,10 @@ void S_game::GetChunks()
         auto pos = c->pos;
 
         c->Init(chunks);
-        SendMessage(ToSendableM(S_LoadChunk(*c)), requestedChukns[pos]);
+        auto clientsToSend = std::vector<uint32_t>(requestedChukns[pos].begin(),requestedChukns[pos].end());
         requestedChukns.erase(pos);
         chunks[pos] = std::move(c);
+        SendChunk(pos,std::move(clientsToSend));
     }
 }
 
@@ -50,10 +53,13 @@ void S_game::Tick(float deltaT)
     // handle messages
     for (auto& c : clients)
     {
-        auto Messages = c.connection->inqueue.GetDeque();
-        for (auto& m : Messages)
+        if (c.connection)
         {
-            ProcessMessages(m, c.id);
+            auto Messages = c.connection->inqueue.GetDeque();
+            for (auto& m : Messages)
+            {
+                ProcessMessages(m, c.id);
+            }
         }
     }
     //
@@ -77,21 +83,43 @@ std::shared_ptr<Entity> S_game::SpawnEntity(std::unique_ptr<Entity> e_, Chunk& c
     return e;
 }
 
+void S_game::SendChunk(Vector2Int pos, std::vector<uint32_t> clients)
+{
+    if (auto& c = chunks[pos])
+    {
+        std::vector<std::shared_ptr<const Message>> messagesToSend;
+        messagesToSend.reserve(c->Entities.size() + 1); // reserve messages for entities and chunk
+        messagesToSend.push_back(ToSendableM(S_LoadChunk(*c)));
+        for (auto& e : c->Entities)
+        {
+            messagesToSend.push_back(ToSendableM(S_EntitySpawned(*e)));
+        }
+        SendMessage(std::move(messagesToSend), std::move(clients));
+    }
+}
+
+void S_game::SendChunk(Vector2Int pos, uint32_t clients)
+{
+    if (auto& c = chunks[pos])
+    {
+        std::vector<std::shared_ptr<const Message>> messagesToSend;
+        messagesToSend.reserve(c->Entities.size() + 1); // reserve messages for entities and chunk
+        messagesToSend.push_back(ToSendableM(S_LoadChunk(*c)));
+        for (auto& e : c->Entities)
+        {
+            messagesToSend.push_back(ToSendableM(S_EntitySpawned(*e)));
+        }
+        SendMessage(std::move(messagesToSend), clients);
+    }
+}
+
 void S_game::OnClientJoin(Client& c)
 {
-    //Send the chunk first so entities can be spawned
+    // Send the chunk first so entities can be spawned
     Chunk& spawnChunk = *chunks[{0, 0}];
-    SendMessage(ToSendableM(S_LoadChunk(spawnChunk)), c.id);
-    // Send all entitites
-    for (auto& e_ : Entities.items)
-    {
-        auto e = e_.lock();
-        if (e)
-        {
-            c.connection->Send(ToSendableM(S_EntitySpawned(e->entityID)));
-        }
-    }
-    //
+
+    SendChunk({0, 0}, c.id);
+
     auto ent = std::make_unique<Entity>();
     ent->transform.pos = {8, 0, 8};
     // find the first air block available
@@ -128,9 +156,20 @@ Message S_game::S_EntitySpawned(EntityID id)
     Message m;
     m.push_back(MessageTypes::EntitySpawned);
 
-    m.push_back(id);
     auto e = GetEntity(id);
+    m.push_back(id);
     e->Serialize(m);
+
+    return m;
+}
+
+Message S_game::S_EntitySpawned(Entity& e)
+{
+    Message m;
+    m.push_back(MessageTypes::EntitySpawned);
+
+    m.push_back(e.entityID);
+    e.Serialize(m);
 
     return m;
 }
@@ -163,7 +202,7 @@ void S_game::R_RequestChunk(M_P_ARGS_T)
         // std::cout << pos.x << ' ' << pos.y << '\n';//
         if (auto& c = chunks[pos])
         {
-            SendMessage(ToSendableM(S_LoadChunk(*c)), ClientID);
+            SendChunk(pos, ClientID);
         }
         else
         {
@@ -187,7 +226,7 @@ void S_game::R_EntityMoved(M_P_ARGS_T)
         {
             e->currentChunk->MoveEntity(e->currentChunk->GetEntityIt(e), *chunks[c_pos]);
         }
-        SendMessageToAll(ToSendableM(S_EntityMoved(*e)),ClientID);
+        SendMessageToAll(ToSendableM(S_EntityMoved(*e)), ClientID);
     }
     else
     {

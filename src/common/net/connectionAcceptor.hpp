@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include <set>
-
+#include "../utility.hpp"
 #include "connection.hpp"
+#include <set>
 
 namespace asio = boost::asio;
 
@@ -40,6 +40,8 @@ private:
     std::thread ic_thread;
     tcp::acceptor connection_acceptor;
 
+    std::vector<int> disconnectedClients;
+
 protected:
     std::vector<Client> clients;
 
@@ -47,29 +49,36 @@ private:
     bool VerifyConnection(tcp::socket& socket_);
 
     template <typename M>
-    void SendMessage_(M& m, int32_t ClientID)
+    void SendMessage_(M& m, uint32_t ClientID)
     {
-        for (auto& c : clients)
+        if (ClientID < clients.size())
         {
-            if (c.id == ClientID)
+            Client& c = clients[ClientID];
+            if (c.connection)
             {
                 c.connection->Send(m);
-                break;
+            }
+            else {
+            std::cerr << "aaaaaaaa\n";
             }
         }
     }
 
     template <typename M>
-    void SendMessageToAll_(M& m, int32_t ignore = -1)
+    void SendMessageToAll_(M& m, uint32_t ignore = -1)
     {
         for (int i = clients.size() - 1; i >= 0; --i)
         {
-            auto& c = clients[i];
-            if (c.id != ignore)
-            {
-                if (!c.connection->Send(m))
-                    clients.erase(clients.begin() + i);
-            }
+            Client& c = clients[i];
+            if (c.connection)
+                if (c.id != ignore)
+                {
+                    if (!c.connection->Send(m))
+                    {
+                        c.connection = nullptr;
+                        disconnectedClients.push_back(i);
+                    }
+                }
         }
     }
 
@@ -81,44 +90,44 @@ public:
     void Tick();
     virtual void OnClientJoin(Client& c);
 
-    inline void SendMessage(std::shared_ptr<const Message> m, int32_t ClientID)
+    inline void SendMessage(std::shared_ptr<const Message> m, uint32_t ClientID)
     {
         SendMessage_(m, ClientID);
     }
-    inline void SendMessageToAll(std::shared_ptr<const Message> m, int32_t ignore = -1)
+    inline void SendMessageToAll(std::shared_ptr<const Message> m, uint32_t ignore = UINT_MAX)
     {
         SendMessageToAll_(m, ignore);
     }
 
-    inline void SendMessage(std::shared_ptr<const Message> m, std::vector<int32_t> ClientIDs)
+    inline void SendMessage(std::shared_ptr<const Message> m, std::vector<uint32_t> ClientIDs)
     {
         for (auto cID : ClientIDs)
             SendMessage_(m, cID);
     }
 
-    inline void SendMessage(std::shared_ptr<const Message> m, std::set<int32_t> ClientIDs)
+    inline void SendMessage(std::shared_ptr<const Message> m, std::set<uint32_t> ClientIDs)
     {
         for (auto cID : ClientIDs)
             SendMessage_(m, cID);
     }
 
-    inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, int32_t ClientID)
+    inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, uint32_t ClientID)
     {
         SendMessage_(m, ClientID);
     }
 
-    inline void SendMessageToAll(std::vector<std::shared_ptr<const Message>> m, int32_t ignore = -1)
+    inline void SendMessageToAll(std::vector<std::shared_ptr<const Message>> m, uint32_t ignore = UINT_MAX)
     {
         SendMessageToAll_(m, ignore);
     }
 
-    inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, std::set<int32_t> ClientIDs)
+    inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, std::set<uint32_t> ClientIDs)
     {
         for (auto cID : ClientIDs)
             SendMessage_(m, cID);
     }
 
-    inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, std::vector<int32_t> ClientIDs)
+    inline void SendMessage(std::vector<std::shared_ptr<const Message>> m, std::vector<uint32_t> ClientIDs)
     {
         for (auto cID : ClientIDs)
             SendMessage_(m, cID);
@@ -202,7 +211,7 @@ CON_ACC_CL(void)::AcceptConnections()
                 return;
             std::cout << "Adding Connection to server!" << std::endl;
             Client client;
-            int cnum = ++clCounter;
+            int cnum = clCounter++;
 
             welcomeMessage mes;
             mes.ClientID = cnum;
