@@ -33,8 +33,10 @@ class TestRen : public Renderer
     // ChunkMeshGPU mesh;
     glm::mat4 proj;
     glm::mat4 view;
+    Vector3 DirVector;
 
     std::shared_ptr<Entity> player;
+    
     float pitch = 0;
     float yaw = 0;
     const float speed = 10.0f;
@@ -60,6 +62,19 @@ public:
 
         ChunkMeshGPU::staticInit();
         Entity::StaticInit();
+
+        OnMB_Press_Funcs[GLFW_MOUSE_BUTTON_LEFT] = [this]() {
+            Vector3Int hitPos;
+            Vector3Int facing;
+            Vector3 pPos = player->transform.GetMidPoint();
+            Chunk& pChunk = *(player->currentChunk);
+            if (pChunk.RayCast(pPos, pPos + (DirVector * 20.0f), hitPos, facing))
+            {
+                auto hitBlock = pChunk[hitPos];
+                hitBlock = air;
+                hitBlock.chunk.blockMeshUpdate(hitBlock.pos);
+            }
+        };
     }
 
     void UpdateCamera(double DeltaT)
@@ -75,7 +90,6 @@ public:
             pitch = -89;
 
         // yaw = fmod(yaw,360.0f);
-        Vector3 DirVector;
         DirVector.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
         DirVector.y = sin(glm::radians(pitch));
         DirVector.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));

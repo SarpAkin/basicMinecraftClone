@@ -1,5 +1,9 @@
 #include "chunk.hpp"
+#include "tile.hpp"
+#include "vectors.hpp"
 
+#include <cmath>
+#include <glm/geometric.hpp>
 #include <iostream>
 
 #ifndef SERVER_SIDE
@@ -15,6 +19,139 @@ void Chunk::Tick(float deltaT)
         {
             ChunkVSAABB(Entities.begin() + i, deltaT);
         }
+}
+
+// square func
+inline float sq(float in)
+{
+    return in * in;
+}
+
+bool Chunk::RayCast(Vector3 start, Vector3 end, Vector3Int& hitTile, Vector3Int& facing)
+{
+
+    start += Vector3(.5f, .5f, .5f); // add .5 to all axises since tiles borders range form .5 to -.5
+    end += Vector3(.5f, .5f, .5f);   // add .5 to all axises since tiles borders range form .5 to -.5
+
+    Vector3 dir = glm::normalize(end - start);
+
+    Vector3Int startTilePos = (Vector3Int)(start);
+
+    // clang-format off
+    Vector3 stepSize = {
+        std::sqrt(1 + sq(dir.y / dir.x) + sq(dir.z / dir.x)), // step size for x
+        std::sqrt(1 + sq(dir.x / dir.y) + sq(dir.z / dir.y)), // step size for y
+        std::sqrt(1 + sq(dir.x / dir.z) + sq(dir.y / dir.z)), // step size for z
+    };
+    // clang-format on
+
+    float rayLength_x;
+    float rayLength_y;
+    float rayLength_z;
+
+    int x_dir;
+    int y_dir;
+    int z_dir;
+    if (dir.x < 0)
+    {
+        x_dir = -1;
+        rayLength_x = (start.x - float(startTilePos.x)) * stepSize.x;
+    }
+    else
+    {
+        x_dir = 1;
+        rayLength_x = (float(startTilePos.x + 1) - start.x) * stepSize.x;
+    }
+
+    if (dir.y < 0)
+    {
+        y_dir = -1;
+        rayLength_y = (start.y - float(startTilePos.y)) * stepSize.y;
+    }
+    else
+    {
+        y_dir = 1;
+        rayLength_y = (float(startTilePos.y + 1) - start.y) * stepSize.y;
+    }
+
+    if (dir.z < 0)
+    {
+        z_dir = -1;
+        rayLength_z = (start.z - float(startTilePos.z)) * stepSize.z;
+    }
+    else
+    {
+        z_dir = 1;
+        rayLength_z = (float(startTilePos.z + 1) - start.z) * stepSize.z;
+    }
+
+    const auto& this_ = *this;
+
+    Vector3Int currentTile = startTilePos;
+    float distance = std::sqrt(sq(start.x - end.x) + sq(start.y - end.y) + sq(start.z - end.z));
+
+    while (true)
+    {
+        Vector3Int preIncrement = currentTile;
+        // find the shortest ray
+        if (rayLength_x < rayLength_y)
+        {
+            if (rayLength_x < rayLength_z)
+            {
+                // x is the shortest
+                if (rayLength_x > distance)
+                {
+                    return false;
+                }
+                rayLength_x += stepSize.x;
+                currentTile.x += x_dir;
+            }
+            else
+            {
+                // z is the shortest
+                if (rayLength_z > distance)
+                {
+                    return false;
+                }
+                rayLength_z += stepSize.z;
+                currentTile.z += z_dir;
+            }
+        }
+        else
+        {
+            if (rayLength_y < rayLength_z)
+            {
+                // y is the shortest
+                if (rayLength_y > distance)
+                {
+                    return false;
+                }
+                rayLength_y += stepSize.y;
+                currentTile.y += y_dir;
+            }
+            else
+            {
+                // z is the shortest
+                if (rayLength_z > distance)
+                {
+                    return false;
+                }
+                rayLength_z += stepSize.z;
+                currentTile.z += z_dir;
+            }
+        }
+        if (this_[currentTile].properties().isSolid)
+        {
+            hitTile = currentTile;
+            facing = preIncrement - currentTile;
+            return true;
+        }
+        else
+        {
+            this_[currentTile] = sand;
+        }
+    }
+    return false;
 }
 
 Chunk::TileRef Chunk::operator[](Vector3Int pos)
@@ -122,8 +259,28 @@ void Chunk::updateMesh()
 #endif
 }
 
+void Chunk::blockMeshUpdate(Vector3Int pos)
+{
+    updateMesh();
+    if (pos.z == 15 && northernChunk)
+    {
+        northernChunk->updateMesh();
+    }
+    else if (pos.z == 0 && southernChunk)
+    {
+        southernChunk->updateMesh();
+    }
+    if (pos.x == 0 && westernChunk)
+    {
+        westernChunk->updateMesh();
+    }
+    else if (pos.x == 15 && easternChunk)
+    {
+        easternChunk->updateMesh();
+    }
+}
 
-//TODO optimze this
+// TODO optimze this
 ChunkMesh Chunk::GenMesh() const
 {
     ChunkMesh mesh_;
@@ -273,7 +430,7 @@ void VerticalChunkMesh::addSquare(Vector3Int pos_, direction facing, uint16_t te
     // TODO measeure the atlas size and divide by atlas size
     float atlaspos = atlasTileX_Size * textureID;
     uint16_t VertexIndex = verticies.size();
-    switch  (facing)
+    switch (facing)
     {
 
     case direction::up:

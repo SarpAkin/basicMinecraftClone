@@ -24,7 +24,7 @@ struct Transform
     float drag = 0.4;
     inline Vector3 GetMidPoint() const
     {
-        return pos + size * .5f;
+        return pos + (size * .5f);
     }
     inline void SetMidPoint(Vector3 v)
     {

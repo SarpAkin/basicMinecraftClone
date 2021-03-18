@@ -36,7 +36,7 @@ public:
 
     inline ChunkMeshGPU(Chunk& c)
     {
-        MEASURE_TIME(auto mesh = c.GenMesh());
+        auto mesh = c.GenMesh();
         pos = c.getPos();
         Construct(mesh);
     }

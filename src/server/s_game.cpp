@@ -132,7 +132,7 @@ void S_game::OnClientJoin(Client& c)
         }
     }
     ent->transform.velocity = {0, 0, 0};
-    ent->transform.size = {.8f, 1.8f, .8f};
+    ent->transform.size = {2.8f, 1.8f, 2.8f};
     auto eID = SpawnEntity(std::move(ent), spawnChunk)->entityID;
     c.c_field.entID = eID;
     SendMessage(ToSendableM(S_PlayerSpawned(eID)), c.id);

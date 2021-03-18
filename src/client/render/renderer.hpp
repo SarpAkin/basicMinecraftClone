@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -16,6 +17,7 @@
 #include "shader.hpp"
 
 const int KeyCount = GLFW_KEY_LAST + 1;
+const int MouseButtonCount = GLFW_MOUSE_BUTTON_LAST + 1;
 class Renderer
 {
 private:
@@ -29,15 +31,19 @@ protected:
     int width;
     int height;
 
+    std::unordered_map<int,std::function<void()>> OnMB_Press_Funcs;
+
 public:
     double MouseXRaw;
     double MouseYRaw;
     std::array<uint8_t, KeyCount> keyMap;
+    std::array<uint8_t, MouseButtonCount> MBMap;
 
 private:
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
     static void Screen_Resize_Callback(GLFWwindow* window, int width_, int height_);
+    static void Mouse_Button_CallBack(GLFWwindow* window, int button, int action, int mods);
 
 protected:
     virtual void OnStart();

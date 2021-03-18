@@ -83,11 +83,13 @@ class Chunk
     class TileRef
     {
         friend Chunk;
+    public:
+        const Vector3Int pos;
         Chunk& chunk;
-        Vector3Int pos;
-        inline TileRef(Chunk& c, Vector3Int p) : chunk(c)
+
+    private:
+        inline TileRef(Chunk& c, Vector3Int p) : pos(p),chunk(c)
         {
-            pos = p;
         }
 
     public:
@@ -153,9 +155,14 @@ public:
         Entities.erase(e_it);
     }
 
+    void blockMeshUpdate(Vector3Int pos);
     void updateMesh();
     void resetNeighbour();
     void Tick(float deltaT);
+
+    // positions should be relative to chunk pos
+    bool RayCast(Vector3 start, Vector3 end, Vector3Int& hitTile, Vector3Int& facing);
+
     inline static Vector2Int ToChunkCord(Vector2Int in)
     {
         return Vector2Int(in.x >= 0 ? in.x / chunk_size : (in.x - (chunk_size - 1)) / chunk_size,

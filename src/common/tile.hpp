@@ -8,6 +8,7 @@
 struct TileProperties
 {
     bool isTransparent;
+    bool isSolid;
     std::string name;
     uint16_t TextureID;
 

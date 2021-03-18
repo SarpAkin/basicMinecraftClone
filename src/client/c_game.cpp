@@ -92,7 +92,7 @@ void C_game::R_LoadChunk(M_P_ARGS_T)
 {
     auto c_pos = m.pop_front<Vector2Int>();
     requestedChunks.erase(c_pos);
-    MEASURE_TIME(auto chunk = std::make_unique<Chunk>());
+    auto chunk = std::make_unique<Chunk>();
     m.pop_front(*chunk);
     chunk->Init(chunks); // init chunk
     chunks[c_pos] = std::move(chunk);

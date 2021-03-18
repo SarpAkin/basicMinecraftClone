@@ -49,6 +49,20 @@ void Renderer::cursor_position_callback(GLFWwindow* window, double xpos, double 
     renderer->oldypos = ypos;
 }
 
+void Renderer::Mouse_Button_CallBack(GLFWwindow* window, int button, int action, int mods)
+{
+    Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
+    if(button < MouseButtonCount&& button >= 0)
+    {
+        renderer->MBMap[button] = action;
+    }
+    auto funcit = renderer->OnMB_Press_Funcs.find(button);
+    if(funcit != renderer->OnMB_Press_Funcs.end())
+    {
+        funcit->second();
+    }
+}
+
 bool Renderer::Construct(int width_, int height_)
 {
     width = width_;
@@ -94,8 +108,9 @@ bool Renderer::Construct(int width_, int height_)
     GLCALL(glfwSetKeyCallback(window, key_callback));
     GLCALL(glfwSetCursorPosCallback(window, cursor_position_callback));
     GLCALL(glfwSetWindowSizeCallback(window,Screen_Resize_Callback));
+    GLCALL(glfwSetMouseButtonCallback(window,Mouse_Button_CallBack));
 
-    //GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
+    GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
     if (glfwRawMouseMotionSupported())
     {
         GLCALL(glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE));
