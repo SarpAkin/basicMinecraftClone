@@ -64,6 +64,13 @@ public:
         Entity::StaticInit();
 
         OnMB_Press_Funcs[GLFW_MOUSE_BUTTON_LEFT] = [this]() {
+            if (!isCursorLocked)
+            {
+                // if cursor isn't locked lock cursor and do nothing else
+                LockCursor();
+                return;
+            }
+
             Vector3Int hitPos;
             Vector3Int facing;
             Vector3 pPos = player->transform.GetMidPoint();
@@ -71,7 +78,7 @@ public:
             if (pChunk.RayCast(pPos, pPos + (DirVector * 20.0f), hitPos, facing))
             {
                 auto hitBlock = pChunk[hitPos];
-                game.PlaceBlock(hitBlock,air);
+                game.PlaceBlock(hitBlock, air);
             }
         };
 
@@ -83,9 +90,11 @@ public:
             if (pChunk.RayCast(pPos, pPos + (DirVector * 20.0f), hitPos, facing))
             {
                 auto hitBlock = pChunk[hitPos + facing];
-                game.PlaceBlock(hitBlock,sand);
+                game.PlaceBlock(hitBlock, sand);
             }
         };
+
+        OnKey_Press_Funcs[GLFW_KEY_ESCAPE] = [this]() { UnlockCursor(); };
     }
 
     void UpdateCamera(double DeltaT)

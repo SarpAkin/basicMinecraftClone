@@ -31,7 +31,10 @@ protected:
     int width;
     int height;
 
+    bool isCursorLocked = false;
+
     std::unordered_map<int,std::function<void()>> OnMB_Press_Funcs;
+    std::unordered_map<int,std::function<void()>> OnKey_Press_Funcs;
 
 public:
     double MouseXRaw;
@@ -50,6 +53,8 @@ protected:
     virtual void OnUpdate(double DeltaT);
     virtual void OnDestroy();
 
+    void LockCursor();
+    void UnlockCursor();
 public:
     Renderer() = default;
     virtual ~Renderer();
@@ -60,4 +65,5 @@ public:
 
     void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader);
     void DrawU16(const VertexArray& va, const IndexBuffer& ib, const Shader& shader);
+
 };

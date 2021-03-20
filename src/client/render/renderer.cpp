@@ -24,14 +24,21 @@ void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int actio
     Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
     if (key < KeyCount && key >= 0)
         renderer->keyMap[key] = action;
-    // std::cout << action << ' ' << key << '\n';
+
+    if (action == GLFW_PRESS)
+    {
+        auto funcit = renderer->OnKey_Press_Funcs.find(key);
+        if (funcit != renderer->OnKey_Press_Funcs.end())
+        {
+            funcit->second();
+        }
+    }
 }
 
 void Renderer::Screen_Resize_Callback(GLFWwindow* window, int width_, int height_)
 {
     // GLCALL(glfwSetWindowSize(window, width_, height_));
     GLCALL(glViewport(0, 0, width_, height_));
-    std::cout << "aaaaa\n";
     Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
     renderer->width = width_;
     renderer->height = height_;
@@ -41,8 +48,16 @@ void Renderer::Screen_Resize_Callback(GLFWwindow* window, int width_, int height
 void Renderer::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
     Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
-    renderer->MouseXRaw = xpos - renderer->oldxpos;
-    renderer->MouseYRaw = ypos - renderer->oldypos;
+    if (renderer->isCursorLocked)
+    {
+        renderer->MouseXRaw = xpos - renderer->oldxpos;
+        renderer->MouseYRaw = ypos - renderer->oldypos;
+    }
+    else
+    {
+        renderer->MouseXRaw = 0;
+        renderer->MouseYRaw = 0;
+    }
     renderer->oldxpos = xpos;
     renderer->oldypos = ypos;
 }
@@ -73,12 +88,12 @@ bool Renderer::Construct(int width_, int height_)
     if (!glfwInit())
         return false;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(width, height, "Minecraft Clone", nullptr, nullptr);
 
     GLCALL(glfwSetWindowUserPointer(window, this));
 
@@ -111,14 +126,9 @@ bool Renderer::Construct(int width_, int height_)
     GLCALL(glfwSetWindowSizeCallback(window, Screen_Resize_Callback));
     GLCALL(glfwSetMouseButtonCallback(window, Mouse_Button_CallBack));
 
-    GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
-    if (glfwRawMouseMotionSupported())
-    {
-        GLCALL(glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE));
-    }
     OnStart();
 
-    std::cout << glGetString(GL_VERSION) << '\n';
+    // std::cout << glGetString(GL_VERSION) << '\n';
     return true;
 }
 
@@ -147,6 +157,22 @@ bool Renderer::Start()
         GLCALL(glfwPollEvents());
     }
     return true;
+}
+
+void Renderer::LockCursor()
+{
+    GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
+    if (glfwRawMouseMotionSupported())
+    {
+        GLCALL(glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE));
+    }
+    isCursorLocked = true;
+}
+
+void Renderer::UnlockCursor()
+{
+    isCursorLocked = false;
+    GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL));
 }
 
 Renderer::~Renderer()
