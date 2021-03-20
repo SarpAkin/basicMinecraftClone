@@ -30,6 +30,7 @@ enum MessageTypes : uint16_t
 {
     EntityMoved,
     EntitySpawned,
+    EntityDestroyed,
     PlayerSpawned,
     LoadChunk,
     RequestChunk,
@@ -82,18 +83,21 @@ protected:
 
     virtual void ProcessMessageCustom(MessageTypes, M_P_ARGS_T) = 0;
 
-    virtual void R_EntityMoved(M_P_ARGS_T);
     void R_BlockPlaced(M_P_ARGS_T);
+    virtual void R_EntityMoved(M_P_ARGS_T);
+    void R_EntityDestroyed(M_P_ARGS_T);
+    
     
     Message S_BlockPlaced(Chunk::TileRef tile);
     Message S_EntityMoved(Entity& e);
-
+    Message S_EntityDestroyed(EntityID id);
 
     virtual void OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID);
 public:
     void GenerateChunk(Vector2Int pos);
 
     virtual std::shared_ptr<Entity> GetEntity(EntityID) = 0;
+    virtual void DestroyEntity(EntityID id)=0;
 
     Game();
     virtual ~Game() = default;

@@ -73,9 +73,21 @@ std::shared_ptr<Entity> C_game::GetEntity(EntityID id)
 {
     return Entities[id].lock();
 }
-//Events
 
-void C_game::OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID)
+void C_game::DestroyEntity(EntityID id)
+{
+    auto e = Entities[id].lock();
+    if(e)
+    {
+        Chunk& e_chunk = *(e->currentChunk);
+        e_chunk.Entities.erase(e_chunk.GetEntityIt(e));
+    }
+
+    Entities.erase(id);
+}
+// Events
+
+void C_game::OnBlockPlaced(Chunk::TileRef tile, uint32_t ClientID)
 {
     tile.chunk.blockMeshUpdate(tile.pos);
 }

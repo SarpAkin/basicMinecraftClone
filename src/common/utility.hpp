@@ -72,7 +72,7 @@ public:
         }
     }
 
-    void erease(indexer i)
+    void erase(indexer i)
     {
         if constexpr (is_weak_ptr)
             items[i].reset();
@@ -81,9 +81,12 @@ public:
         deletedElementPositions.push_back(i);
     }
 
-    inline auto& operator[](indexer i)
+    inline auto operator[](indexer i)
     {
-        return items[i];
+        if (i < items.size())
+            return items[i];
+        else
+            return T();
     }
 };
 

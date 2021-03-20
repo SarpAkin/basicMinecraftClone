@@ -13,8 +13,9 @@ class C_game : public Game, private Client
 private:
     std::unordered_map<EntityID, std::weak_ptr<Entity>> Entities;
 
-    std::unordered_set<Vector2Int,Hasher<Vector2Int>> requestedChunks;
+    std::unordered_set<Vector2Int, Hasher<Vector2Int>> requestedChunks;
     std::vector<Vector2Int> requestCBuffer;
+
 public:
     std::weak_ptr<Entity> Player;
 
@@ -29,7 +30,8 @@ protected: // func
     void ProcessMessageCustom(MessageTypes, M_P_ARGS_T) override;
     //
 
-    void OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID) override;
+    void OnBlockPlaced(Chunk::TileRef tile, uint32_t ClientID) override;
+
 public:
     C_game(uint16_t port, const char* ip);
     void Tick(float deltaT);
@@ -37,8 +39,9 @@ public:
     void requestChunk(Vector2Int pos);
 
     std::shared_ptr<Entity> GetEntity(EntityID) override;
+    void DestroyEntity(EntityID id) override;
 
-    inline void PlaceBlock(Chunk::TileRef& tile,Tile block)
+    inline void PlaceBlock(Chunk::TileRef& tile, Tile block)
     {
         tile = block;
         connection->Send(ToSendableM(S_BlockPlaced(tile)));

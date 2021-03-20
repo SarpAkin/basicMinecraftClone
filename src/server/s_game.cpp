@@ -32,10 +32,10 @@ void S_game::GetChunks()
         auto pos = c->pos;
 
         c->Init(chunks);
-        auto clientsToSend = std::vector<uint32_t>(requestedChukns[pos].begin(),requestedChukns[pos].end());
+        auto clientsToSend = std::vector<uint32_t>(requestedChukns[pos].begin(), requestedChukns[pos].end());
         requestedChukns.erase(pos);
         chunks[pos] = std::move(c);
-        SendChunk(pos,std::move(clientsToSend));
+        SendChunk(pos, std::move(clientsToSend));
     }
 }
 
@@ -51,17 +51,15 @@ void S_game::Tick(float deltaT)
     //
 
     // handle messages
-    for (auto& c : clients)
-    {
-        if (c.connection)
+    auto fcFunc = [this](Client& c) {
+        auto Messages = c.connection->inqueue.GetDeque();
+        for (auto& m : Messages)
         {
-            auto Messages = c.connection->inqueue.GetDeque();
-            for (auto& m : Messages)
-            {
-                ProcessMessages(m, c.id);
-            }
+            ProcessMessages(m, c.id);
         }
-    }
+    };
+    ForEachClient(fcFunc);
+
     //
     schedular.Tick();
     ConnectionAcceptor::Tick();
@@ -113,6 +111,22 @@ void S_game::SendChunk(Vector2Int pos, uint32_t clients)
     }
 }
 
+void S_game::DestroyEntity(EntityID id)
+{
+    auto e = Entities[id].lock();
+    if (e)
+    {
+        Chunk& e_chunk = *(e->currentChunk);
+        e_chunk.Entities.erase(e_chunk.GetEntityIt(e));
+    }
+
+    Entities.erase(id);
+
+    // Broadcast destruction
+    SendMessageToAll(ToSendableM(S_EntityDestroyed(id)), -1);
+}
+
+// Events
 void S_game::OnClientJoin(Client& c)
 {
     // Send the chunk first so entities can be spawned
@@ -137,11 +151,15 @@ void S_game::OnClientJoin(Client& c)
     c.c_field.entID = eID;
     SendMessage(ToSendableM(S_PlayerSpawned(eID)), c.id);
 }
-//Events
 
-void S_game::OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID)
+void S_game::OnClientDisconnect(Client& c)
 {
-    SendMessageToAll(ToSendableM(S_BlockPlaced(tile)),ClientID);
+    DestroyEntity(c.c_field.entID);
+}
+
+void S_game::OnBlockPlaced(Chunk::TileRef tile, uint32_t ClientID)
+{
+    SendMessageToAll(ToSendableM(S_BlockPlaced(tile)), ClientID);
 }
 
 // Messages
@@ -239,4 +257,3 @@ void S_game::R_EntityMoved(M_P_ARGS_T)
         std::cerr << "Entity doesn't exist\n";
     }
 }
-

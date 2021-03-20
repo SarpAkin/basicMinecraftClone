@@ -37,7 +37,33 @@ void Game::Schedular::SchedulRepeatingFunc(std::function<void()> f_, uint64_t ti
     };
     SchedulFunc(*repeatingFunc, time_ahead);
 }
+
+Game::Game()
+{
+}
+
+void Game::OnBlockPlaced(Chunk::TileRef tile, uint32_t ClientID)
+{
+}
 //
+
+Message Game::S_EntityDestroyed(EntityID id)
+{
+    Message m;
+    m.push_back(MessageTypes::EntityDestroyed);
+
+    m.push_back(id);
+
+    return m;
+}
+
+void Game::R_EntityDestroyed(M_P_ARGS_T)
+{
+    EntityID eID;
+    m.pop_front(eID);
+
+    DestroyEntity(eID);
+}
 
 void Game::R_EntityMoved(M_P_ARGS_T)
 {
@@ -76,11 +102,11 @@ void Game::R_BlockPlaced(M_P_ARGS_T)
 
     m.pop_front(c_pos);
     m.pop_front(b_pos);
-    if(auto& c = chunks[c_pos])
+    if (auto& c = chunks[c_pos])
     {
         auto tRef = (*c)[b_pos];
         tRef = m.pop_front<Tile>();
-        OnBlockPlaced(tRef,ClientID);
+        OnBlockPlaced(tRef, ClientID);
     }
     else
     {
@@ -108,18 +134,10 @@ void Game::ProcessMessages(M_P_ARGS_T)
     switch (mType)
     {
         M_P_CASE(EntityMoved);
+        M_P_CASE(EntityDestroyed);
         M_P_CASE(BlockPlaced);
     default:
         ProcessMessageCustom(mType, M_P_ARGS);
         break;
     }
-}
-
-Game::Game()
-{
-}
-
-void Game::OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID)
-{
-
 }

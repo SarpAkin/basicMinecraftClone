@@ -7,29 +7,26 @@ struct welcomeMessage
 
 Client::Client(uint16_t portNum, const char* ip)
 {
-    auto endpoint = asio::ip::tcp::endpoint(asio::ip::make_address(ip), portNum);
-    asio::ip::tcp::socket socket_(ic);
-    socket_.connect(endpoint);
-    MHeader header;
-    header.DataSize = 0;
-    //Verify Connection
-    socket_.wait(socket_.wait_write);
-    socket_.write_some(asio::buffer(&header,sizeof(header)));
-    
-    //Get ClientNum
-    welcomeMessage wm;
-    socket_.wait(socket_.wait_read);
-    socket_.read_some(asio::buffer(&wm,sizeof(welcomeMessage)));
-    std::cout << "Client id: " << wm.ClientID << '\n';
-    ClientID = wm.ClientID;
+    try
+    {
+        auto endpoint = asio::ip::tcp::endpoint(asio::ip::make_address(ip), portNum);
+        asio::ip::tcp::socket socket_(ic);
+        socket_.connect(endpoint);
 
-    connection = std::make_unique<Connection>(std::move(socket_), ic);
+        connection = std::make_unique<Connection>(std::move(socket_), ic);
+    }
+    catch (std::exception& e)
+    {
+        throw std::runtime_error("failed to connect to server");
+        return;
+    }
+    catch (boost::system::error_code& e)
+    {
+        throw std::runtime_error("failed to connect to server");
+        return;
+    }
 
-    ic_thread = std::thread(
-        [this]()
-        {
-            ic.run();
-        });
+    ic_thread = std::thread([this]() { ic.run(); });
 }
 
 void Client::Stop()

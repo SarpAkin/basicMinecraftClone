@@ -40,10 +40,19 @@ private:
     std::thread ic_thread;
     tcp::acceptor connection_acceptor;
 
-    std::vector<int> disconnectedClients;
+    std::vector<uint32_t> disconnectedClients;
+
+    std::vector<Client> clients;
 
 protected:
-    std::vector<Client> clients;
+public:
+    inline void DisconnectClient(uint32_t ClientID)
+    {
+        Client& c = clients[ClientID];
+        c.connection = nullptr;
+        disconnectedClients.push_back(ClientID);
+        OnClientDisconnect(c);
+    }
 
 private:
     bool VerifyConnection(tcp::socket& socket_);
@@ -56,10 +65,10 @@ private:
             Client& c = clients[ClientID];
             if (c.connection)
             {
-                c.connection->Send(m);
-            }
-            else {
-            std::cerr << "aaaaaaaa\n";
+                if (!c.connection->Send(m))
+                {
+                    DisconnectClient(ClientID);
+                }
             }
         }
     }
@@ -75,8 +84,7 @@ private:
                 {
                     if (!c.connection->Send(m))
                     {
-                        c.connection = nullptr;
-                        disconnectedClients.push_back(i);
+                        DisconnectClient(i);
                     }
                 }
         }
@@ -88,7 +96,8 @@ public:
 
     void AcceptConnections();
     void Tick();
-    virtual void OnClientJoin(Client& c);
+    virtual void OnClientJoin(Client& c) = 0;
+    virtual void OnClientDisconnect(Client& c) = 0;
 
     inline void SendMessage(std::shared_ptr<const Message> m, uint32_t ClientID)
     {
@@ -133,12 +142,11 @@ public:
             SendMessage_(m, cID);
     }
 
-    inline std::vector<Client> GetClients()
+    inline void ForEachClient(std::function<void(Client& c)> func)
     {
-        clientV_mut.lock();
-        auto tmp = std::move(new_clients);
-        clientV_mut.unlock();
-        return tmp;
+        for (Client& c : clients)
+            if (c.connection)
+                func(c);
     }
 
     void Stop();
@@ -166,18 +174,23 @@ CON_ACC_CL()::ConnectionAcceptor(uint16_t portNum) : connection_acceptor(ic, tcp
 CON_ACC_CL(void)::Tick()
 {
     clientV_mut.lock();
-    for (auto& c : new_clients)
+    for (Client& c : new_clients)
     {
-        clients.push_back(std::move(c));
-        OnClientJoin(clients.back());
+        if (disconnectedClients.size())
+        {
+            uint32_t clientID = disconnectedClients.back();
+            c.id = clientID;
+            clients[clientID] = std::move(c);
+        }
+        else
+        {
+            c.id = clients.size();
+            clients.push_back(std::move(c));
+            OnClientJoin(clients.back());
+        }
     }
     new_clients.clear();
     clientV_mut.unlock();
-}
-
-CON_ACC_CL(void)::OnClientJoin(Client& c)
-{
-    /*LeaveEmpty*/
 }
 
 CON_ACC_CL(bool)::VerifyConnection(tcp::socket& socket_) // move to private
@@ -207,17 +220,7 @@ CON_ACC_CL(void)::AcceptConnections()
         AcceptConnections();
         if (!ec)
         {
-            if (!VerifyConnection(_socket)) // Blocking method for verifying connection.
-                return;
-            std::cout << "Adding Connection to server!" << std::endl;
             Client client;
-            int cnum = clCounter++;
-
-            welcomeMessage mes;
-            mes.ClientID = cnum;
-            _socket.write_some(asio::buffer(&mes, sizeof(welcomeMessage)));
-
-            client.id = cnum;
             client.connection = std::make_unique<Connection>(std::move(_socket), ic);
             // client.connection->SetTName(std::string("client ") + std::to_string(client.id) + " ");
             clientV_mut.lock();
