@@ -47,9 +47,9 @@ void Game::R_EntityMoved(M_P_ARGS_T)
         m.pop_front(e->transform.pos);
         Vector2Int c_pos;
         m.pop_front(c_pos);
-        if(e->currentChunk->pos != c_pos)
+        if (e->currentChunk->pos != c_pos)
         {
-            e->currentChunk->MoveEntity(e->currentChunk->GetEntityIt(e),*chunks[c_pos]);
+            e->currentChunk->MoveEntity(e->currentChunk->GetEntityIt(e), *chunks[c_pos]);
         }
     }
     else
@@ -69,6 +69,37 @@ Message Game::S_EntityMoved(Entity& e)
     return m;
 }
 
+void Game::R_BlockPlaced(M_P_ARGS_T)
+{
+    Vector2Int c_pos;
+    Vector3Int b_pos;
+
+    m.pop_front(c_pos);
+    m.pop_front(b_pos);
+    if(auto& c = chunks[c_pos])
+    {
+        auto tRef = (*c)[b_pos];
+        tRef = m.pop_front<Tile>();
+        OnBlockPlaced(tRef,ClientID);
+    }
+    else
+    {
+        std::cerr << "client " << ClientID << "send invalid chunk pos!\n";
+    }
+}
+
+Message Game::S_BlockPlaced(Chunk::TileRef tile)
+{
+    Message m;
+    m.push_back(MessageTypes::BlockPlaced);
+
+    m.push_back(tile.chunk.pos);
+    m.push_back(tile.pos);
+    m.push_back((Tile)tile);
+
+    return m;
+}
+
 void Game::ProcessMessages(M_P_ARGS_T)
 {
 
@@ -77,6 +108,7 @@ void Game::ProcessMessages(M_P_ARGS_T)
     switch (mType)
     {
         M_P_CASE(EntityMoved);
+        M_P_CASE(BlockPlaced);
     default:
         ProcessMessageCustom(mType, M_P_ARGS);
         break;
@@ -85,4 +117,9 @@ void Game::ProcessMessages(M_P_ARGS_T)
 
 Game::Game()
 {
+}
+
+void Game::OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID)
+{
+
 }

@@ -3,8 +3,6 @@
 
 #include "renderer.hpp"
 
-
-
 void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader)
 {
     va.Bind();
@@ -24,15 +22,15 @@ void Renderer::DrawU16(const VertexArray& va, const IndexBuffer& ib, const Shade
 void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
-    if (key < KeyCount &&key >= 0)
+    if (key < KeyCount && key >= 0)
         renderer->keyMap[key] = action;
-    //std::cout << action << ' ' << key << '\n';
+    // std::cout << action << ' ' << key << '\n';
 }
 
-void Renderer::Screen_Resize_Callback(GLFWwindow* window,int width_,int height_)
+void Renderer::Screen_Resize_Callback(GLFWwindow* window, int width_, int height_)
 {
-    //GLCALL(glfwSetWindowSize(window, width_, height_));
-    GLCALL(glViewport(0, 0,width_,height_));
+    // GLCALL(glfwSetWindowSize(window, width_, height_));
+    GLCALL(glViewport(0, 0, width_, height_));
     std::cout << "aaaaa\n";
     Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
     renderer->width = width_;
@@ -52,14 +50,17 @@ void Renderer::cursor_position_callback(GLFWwindow* window, double xpos, double 
 void Renderer::Mouse_Button_CallBack(GLFWwindow* window, int button, int action, int mods)
 {
     Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
-    if(button < MouseButtonCount&& button >= 0)
+    if (button < MouseButtonCount && button >= 0)
     {
         renderer->MBMap[button] = action;
     }
-    auto funcit = renderer->OnMB_Press_Funcs.find(button);
-    if(funcit != renderer->OnMB_Press_Funcs.end())
+    if (action == GLFW_PRESS)
     {
-        funcit->second();
+        auto funcit = renderer->OnMB_Press_Funcs.find(button);
+        if (funcit != renderer->OnMB_Press_Funcs.end())
+        {
+            funcit->second();
+        }
     }
 }
 
@@ -79,7 +80,7 @@ bool Renderer::Construct(int width_, int height_)
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
 
-    GLCALL(glfwSetWindowUserPointer(window,this));
+    GLCALL(glfwSetWindowUserPointer(window, this));
 
     if (!window)
     {
@@ -104,11 +105,11 @@ bool Renderer::Construct(int width_, int height_)
     // Accept fragment if it closer to the camera than the former one
     GLCALL(glDepthFunc(GL_LESS));
 
-    //Get keyboard-mouse input
+    // Get keyboard-mouse input
     GLCALL(glfwSetKeyCallback(window, key_callback));
     GLCALL(glfwSetCursorPosCallback(window, cursor_position_callback));
-    GLCALL(glfwSetWindowSizeCallback(window,Screen_Resize_Callback));
-    GLCALL(glfwSetMouseButtonCallback(window,Mouse_Button_CallBack));
+    GLCALL(glfwSetWindowSizeCallback(window, Screen_Resize_Callback));
+    GLCALL(glfwSetMouseButtonCallback(window, Mouse_Button_CallBack));
 
     GLCALL(glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED));
     if (glfwRawMouseMotionSupported())
@@ -152,7 +153,6 @@ Renderer::~Renderer()
 {
     OnDestroy();
 }
-
 
 void Renderer::OnStart()
 {

@@ -73,6 +73,12 @@ std::shared_ptr<Entity> C_game::GetEntity(EntityID id)
 {
     return Entities[id].lock();
 }
+//Events
+
+void C_game::OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID)
+{
+    tile.chunk.blockMeshUpdate(tile.pos);
+}
 
 // Messages
 void C_game::ProcessMessageCustom(MessageTypes mtype, M_P_ARGS_T)

@@ -29,6 +29,7 @@ protected: // func
     void ProcessMessageCustom(MessageTypes, M_P_ARGS_T) override;
     //
 
+    void OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID) override;
 public:
     C_game(uint16_t port, const char* ip);
     void Tick(float deltaT);
@@ -36,4 +37,11 @@ public:
     void requestChunk(Vector2Int pos);
 
     std::shared_ptr<Entity> GetEntity(EntityID) override;
+
+    inline void PlaceBlock(Chunk::TileRef& tile,Tile block)
+    {
+        tile = block;
+        connection->Send(ToSendableM(S_BlockPlaced(tile)));
+        tile.chunk.blockMeshUpdate(tile.pos);
+    }
 };

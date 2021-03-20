@@ -38,6 +38,9 @@ public:
 
     void R_RequestChunk(M_P_ARGS_T);
     void R_EntityMoved(M_P_ARGS_T) override;
+    
+    
+    void OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID) override;
     //
     S_game(uint16_t port);
     ~S_game();
@@ -50,6 +53,7 @@ public:
     void OnClientJoin(Client& c) override;
 
     void ProcessMessageCustom(MessageTypes, M_P_ARGS_T) override;
+
     std::shared_ptr<Entity> GetEntity(EntityID) override;
 
     std::shared_ptr<Entity> SpawnEntity(std::unique_ptr<Entity> e, Chunk& c);

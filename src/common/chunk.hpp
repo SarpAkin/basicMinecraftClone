@@ -79,7 +79,7 @@ class Chunk
 {
     friend TGen;
     friend Game;
-
+public:
     class TileRef
     {
         friend Chunk;
@@ -114,8 +114,7 @@ public:
 private:
     inline void exc()
     {
-        std::cerr << "chunk doesn't exist!\n";
-        assert(0);
+        throw std::runtime_error("chunk doesn't exist!\n");
     }
 
 public:

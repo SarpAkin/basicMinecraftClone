@@ -36,7 +36,7 @@ class TestRen : public Renderer
     Vector3 DirVector;
 
     std::shared_ptr<Entity> player;
-    
+
     float pitch = 0;
     float yaw = 0;
     const float speed = 10.0f;
@@ -71,8 +71,19 @@ public:
             if (pChunk.RayCast(pPos, pPos + (DirVector * 20.0f), hitPos, facing))
             {
                 auto hitBlock = pChunk[hitPos];
-                hitBlock = air;
-                hitBlock.chunk.blockMeshUpdate(hitBlock.pos);
+                game.PlaceBlock(hitBlock,air);
+            }
+        };
+
+        OnMB_Press_Funcs[GLFW_MOUSE_BUTTON_RIGHT] = [this]() {
+            Vector3Int hitPos;
+            Vector3Int facing;
+            Vector3 pPos = player->transform.GetMidPoint();
+            Chunk& pChunk = *(player->currentChunk);
+            if (pChunk.RayCast(pPos, pPos + (DirVector * 20.0f), hitPos, facing))
+            {
+                auto hitBlock = pChunk[hitPos + facing];
+                game.PlaceBlock(hitBlock,sand);
             }
         };
     }

@@ -33,6 +33,7 @@ enum MessageTypes : uint16_t
     PlayerSpawned,
     LoadChunk,
     RequestChunk,
+    BlockPlaced,
 };
 
 class Game
@@ -82,8 +83,13 @@ protected:
     virtual void ProcessMessageCustom(MessageTypes, M_P_ARGS_T) = 0;
 
     virtual void R_EntityMoved(M_P_ARGS_T);
+    void R_BlockPlaced(M_P_ARGS_T);
+    
+    Message S_BlockPlaced(Chunk::TileRef tile);
     Message S_EntityMoved(Entity& e);
 
+
+    virtual void OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID);
 public:
     void GenerateChunk(Vector2Int pos);
 

@@ -132,10 +132,16 @@ void S_game::OnClientJoin(Client& c)
         }
     }
     ent->transform.velocity = {0, 0, 0};
-    ent->transform.size = {2.8f, 1.8f, 2.8f};
+    ent->transform.size = {.8f, 1.8f, .8f};
     auto eID = SpawnEntity(std::move(ent), spawnChunk)->entityID;
     c.c_field.entID = eID;
     SendMessage(ToSendableM(S_PlayerSpawned(eID)), c.id);
+}
+//Events
+
+void S_game::OnBlockPlaced(Chunk::TileRef tile,uint32_t ClientID)
+{
+    SendMessageToAll(ToSendableM(S_BlockPlaced(tile)),ClientID);
 }
 
 // Messages
@@ -233,3 +239,4 @@ void S_game::R_EntityMoved(M_P_ARGS_T)
         std::cerr << "Entity doesn't exist\n";
     }
 }
+

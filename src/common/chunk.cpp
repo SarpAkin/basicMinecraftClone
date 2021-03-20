@@ -146,10 +146,6 @@ bool Chunk::RayCast(Vector3 start, Vector3 end, Vector3Int& hitTile, Vector3Int&
             facing = preIncrement - currentTile;
             return true;
         }
-        else
-        {
-            this_[currentTile] = sand;
-        }
     }
     return false;
 }
