@@ -1,0 +1,12 @@
+[submodule "vendor_git/glfw"]
+	path = vendor_git/glfw
+	url = https://github.com/glfw/glfw
+[submodule "vendor_git/glew"]
+	path = vendor_git/glew
+	url = https://github.com/nigels-com/glew
+[submodule "vendor_git/asio"]
+	path = vendor_git/asio
+	url = https://github.com/chriskohlhoff/asio
+[submodule "vendor_git/glm"]
+	path = vendor_git/glm
+	url = https://github.com/g-truc/glm
