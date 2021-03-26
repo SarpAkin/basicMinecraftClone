@@ -165,6 +165,7 @@ public:
 
 int main()
 {
+    std::cout << std::hex << glGetError() << std::dec <<'\n';
 
     // MEASURE_TIME(std::this_thread::sleep_for(std::chrono::seconds(1)));
     {

@@ -138,10 +138,12 @@ bool Renderer::Start()
     auto s = std::chrono::steady_clock::now();
     while (!glfwWindowShouldClose(window) && isRunning)
     {
+        /*
         auto e = s;
         s = std::chrono::steady_clock::now();
         auto dur = s - e;
-        uint64_t dur_ = dur.count();
+        uint64_t dur_ = dur.count();*/
+        uint64_t dur_ =  1000000000 / 144;
 
         /* Render here */
         GLCALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));

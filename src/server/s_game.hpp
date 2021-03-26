@@ -17,7 +17,7 @@ struct customClientFields
     EntityID entID;
 };
 
-class S_game : public Game, private ConnectionAcceptor<customClientFields>
+class S_game : public Game, public ConnectionAcceptor<customClientFields>
 {
 private:
     TGen tgen;

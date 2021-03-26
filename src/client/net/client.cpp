@@ -20,7 +20,7 @@ Client::Client(uint16_t portNum, const char* ip)
         throw std::runtime_error("failed to connect to server");
         return;
     }
-    catch (boost::system::error_code& e)
+    catch (std::error_code& e)
     {
         throw std::runtime_error("failed to connect to server");
         return;

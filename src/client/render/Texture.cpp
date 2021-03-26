@@ -6,7 +6,7 @@ void Texture::construct(const std::string& path)
 {
     stbi_set_flip_vertically_on_load(1);
 
-    u_char* localBuffer;
+    unsigned char* localBuffer;
     localBuffer = stbi_load(path.c_str(), &width, &height, &BPP, 4);
 
     GLCALL(glGenTextures(1, &TextureID));

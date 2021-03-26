@@ -71,7 +71,7 @@ def MakeObfiles(cppfile: str, hstr: str):
 HeaderFiles_json = "automake/HeaderFiles.json"
 
 
-def Make_makefile(compiler: str, cflags: str, srcdirs: list, outfile: str):
+def Make_makefile(compiler: str, cflags: str,linkerflag:str, srcdirs: list, outfile: str):
     global objectfiles
     objectfiles = list()
 
@@ -115,7 +115,7 @@ def Make_makefile(compiler: str, cflags: str, srcdirs: list, outfile: str):
         obFileStr += " " + obf
 
     writestr += "\n$(OUT):" + obFileStr + \
-        "\n\t$(CC) -o $(OUT) " + obFileStr + " $(CFLAGS)\n\n"
+        "\n\t$(CC) -o $(OUT) " + obFileStr + " $(CFLAGS) " + linkerflag + "\n\n"
     writestr += ob_str
 
     mfile = open(executable_dir + outfile + ".mk", "w")

@@ -54,6 +54,7 @@ void C_game::Tick(float deltaT)
     }
 
     // Request chunks
+    if(requestCBuffer.size())
     connection->Send(ToSendableM(S_RequestChunk(std::move(requestCBuffer))));
     // requestedChunks.clear();
     //

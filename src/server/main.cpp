@@ -12,18 +12,24 @@
 
 int main()
 {
-    S_game game(30020);
-    bool running = true;
-    auto run = std::thread([&]() {
-        while (running)
-        {
-            game.Tick(0.01f);
-            std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        }
-    });
-    
-    std::cin.get();
-    running = false;
-    run.join();
+    {
+        S_game game(30020);
+        bool running = true;
 
+        auto run = std::thread([&]() {
+            while (running)
+            {
+                game.Tick(0.002f);
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            }
+        });
+
+        std::cin.get();
+#ifdef _WIN32
+        std::this_thread::sleep_for(std::chrono::seconds(1000));
+#endif
+        running = false;
+        run.join();
+    }
+    return 0;
 }

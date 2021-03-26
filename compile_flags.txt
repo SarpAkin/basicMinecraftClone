@@ -1,3 +1,13 @@
+-std=c++20
 -I
 vendor
--std=c++20
+-I
+vendor_git/asio/asio/include
+-I
+vendor_git/mingw-std-threads
+-I
+vendor_git/glm
+-I
+vendor_git/glew/include
+-I
+vendor_git/glfw/include

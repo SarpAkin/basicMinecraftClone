@@ -29,15 +29,19 @@ Vector2 rotateVectorInRadians(Vector2 v, float radian)
 
 void SetThreadName(std::thread& t, const char* name)
 {
+#ifndef _WIN32
     if (std::string(name).length() > 16)
         std::cerr << "name is too big\n";
     pthread_setname_np(t.native_handle(), name);
+#endif
 }
 
 void SetThreadName(const char* name)
 {
+#ifndef _WIN32
     if (std::string(name).length() > 16)
         std::cerr << "name is too big\n";
     std::cout << name << '\n';
     pthread_setname_np(pthread_self(), name);
+#endif
 }

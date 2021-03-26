@@ -133,7 +133,6 @@ void S_game::OnClientJoin(Client& c)
     Chunk& spawnChunk = *chunks[{0, 0}];
 
     SendChunk({0, 0}, c.id);
-
     auto ent = std::make_unique<Entity>();
     ent->transform.pos = {8, 0, 8};
     // find the first air block available
@@ -150,6 +149,7 @@ void S_game::OnClientJoin(Client& c)
     auto eID = SpawnEntity(std::move(ent), spawnChunk)->entityID;
     c.c_field.entID = eID;
     SendMessage(ToSendableM(S_PlayerSpawned(eID)), c.id);
+
 }
 
 void S_game::OnClientDisconnect(Client& c)

@@ -12,8 +12,6 @@
 #include "connection.hpp"
 #include <set>
 
-namespace asio = boost::asio;
-
 struct welcomeMessage
 {
     int ClientID;
@@ -174,13 +172,16 @@ CON_ACC_CL()::ConnectionAcceptor(uint16_t portNum) : connection_acceptor(ic, tcp
 CON_ACC_CL(void)::Tick()
 {
     clientV_mut.lock();
-    for (Client& c : new_clients)
+    auto local_new_clients = std::move(new_clients);
+    clientV_mut.unlock();
+    for (Client& c : local_new_clients)
     {
         if (disconnectedClients.size())
         {
             uint32_t clientID = disconnectedClients.back();
             c.id = clientID;
             clients[clientID] = std::move(c);
+            OnClientJoin(clients[clientID]);
         }
         else
         {
@@ -189,8 +190,6 @@ CON_ACC_CL(void)::Tick()
             OnClientJoin(clients.back());
         }
     }
-    new_clients.clear();
-    clientV_mut.unlock();
 }
 
 CON_ACC_CL(bool)::VerifyConnection(tcp::socket& socket_) // move to private
@@ -201,7 +200,7 @@ CON_ACC_CL(bool)::VerifyConnection(tcp::socket& socket_) // move to private
         socket_.wait(socket_.wait_read);
         socket_.read_some(asio::buffer(&header, sizeof(welcomeMessage)));
     }
-    catch (const boost::system::error_code e)
+    catch (const std::error_code e)
     {
         std::cerr << e.message() << '\n';
         return false;
@@ -216,8 +215,7 @@ CON_ACC_CL(bool)::VerifyConnection(tcp::socket& socket_) // move to private
 
 CON_ACC_CL(void)::AcceptConnections()
 {
-    connection_acceptor.async_accept([this](boost::system::error_code ec, asio::ip::tcp::socket _socket) {
-        AcceptConnections();
+    connection_acceptor.async_accept([this](std::error_code ec, asio::ip::tcp::socket _socket) {
         if (!ec)
         {
             Client client;
@@ -230,8 +228,10 @@ CON_ACC_CL(void)::AcceptConnections()
         else
         {
             // TODO handle error
-            std::cout << ec.message() << std::endl;
+            volatile int a = 5;
+            std::cerr << "[CON ACCEPTOR] : " << ec.message() << std::endl;
         }
+        AcceptConnections();
     });
 }
 
@@ -241,6 +241,7 @@ CON_ACC_CL(void)::Stop()
         return;
     isStopped = true;
 
+    ic.stop();
     connection_acceptor.cancel();
     connection_acceptor.close();
     clientV_mut.lock();
@@ -249,14 +250,19 @@ CON_ACC_CL(void)::Stop()
         cl.connection->Stop();
     }
     clientV_mut.unlock();
-    ic.stop();
     std::cout << "Server Stopped\n";
 }
 
 CON_ACC_CL()::~ConnectionAcceptor()
 {
     Stop();
-    ic_thread.join();
+    if (ic_thread.joinable())
+        ic_thread.join();
+    else
+    {
+        std::cout << "[CON ACCEPTOR] : io context thread isn't joinable detaching it to avoid crash!\n";
+        ic_thread.detach();
+    }
 }
 
 #undef CON_ACC_CL // end of the cpp

@@ -5,15 +5,12 @@
 #include <vector>
 #include <thread>
 
-#include <boost/asio/ts/internet.hpp>
-#include <boost/asio/ts/buffer.hpp>
-#include <boost/asio.hpp>
+#include "asio_.hpp"
 
 #include "Tsafe_queue.hpp"
 #include "message.hpp"
 #include "../utility.hpp"
 
-namespace asio = boost::asio;
 
 struct MHeader
 {
@@ -31,13 +28,17 @@ private:
 
     bool isOpen = true;
 
-    bool isWriting = false;
+    std::atomic_bool isWriting = false;
 
     T_queue<std::shared_ptr<const Message>> outqueue;
 
     std::vector<char> readHBuffer = std::vector<char>(sizeof(MHeader));
+    std::vector<char> writeHBuffer = std::vector<char>(sizeof(MHeader));
+
     Message readBBuffer;
     std::shared_ptr<const Message> writeBBuffer;
+
+    
 
 public:
     T_queue<Message> inqueue;
