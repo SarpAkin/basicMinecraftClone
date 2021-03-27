@@ -24,12 +24,13 @@ int main()
             }
         });
 
-        std::cin.get();
-#ifdef _WIN32
-        std::this_thread::sleep_for(std::chrono::seconds(1000));
-#endif
+        std::cin.get();//std::cin fails with asio on windows.
+
+        std::this_thread::sleep_for(std::chrono::seconds(1000000000));
+
         running = false;
         run.join();
+
     }
     return 0;
 }

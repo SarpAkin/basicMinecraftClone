@@ -1,10 +1,10 @@
 import automake
 
 compiler = "clang++ --target=x86_64-pc-win32-gnu"
-cflags = "-std=c++20 -Wall -Wno-unused-command-line-argument -Wno-unused-variable -g -O3 --static -lpthread -pthread -lws2_32 -lwsock32"
+cflags = "-std=c++20 -Wall -Wno-unused-command-line-argument -Wno-unused-variable -O3 --static -lpthread -pthread -lws2_32 -lwsock32"
 shared_src = ["src/common","vendor/vendorCompiled"]
 
-debug_cflags = "-D_GLIBCXX_DEBUG "
+debug_cflags = "-D_GLIBCXX_DEBUG -g"
 
 #debug_cflags = ""
 
@@ -20,8 +20,8 @@ objectfileDir = automake.objectfileDir + "windows/"
 
 automake.objectfileDir = objectfileDir + "server/"
 automake.HeaderFiles_json = "automake/HeaderFiles_server.windows.h.json"
-automake.Make_makefile(compiler,server_flags,"",shared_src + ["src/server"],"server")
+automake.Make_makefile(compiler,server_flags,"",shared_src + ["src/server"],"server","exe")
 
 automake.objectfileDir = objectfileDir + "client/"
 automake.HeaderFiles_json = "automake/HeaderFiles_client.windows.h.json"
-automake.Make_makefile(compiler,client_flags,opengl_flags,shared_src + ["src/client"],"client")
+automake.Make_makefile(compiler,client_flags,opengl_flags,shared_src + ["src/client"],"client","exe")

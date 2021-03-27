@@ -71,14 +71,14 @@ def MakeObfiles(cppfile: str, hstr: str):
 HeaderFiles_json = "automake/HeaderFiles.json"
 
 
-def Make_makefile(compiler: str, cflags: str,linkerflag:str, srcdirs: list, outfile: str):
+def Make_makefile(compiler: str, cflags: str,linkerflag:str, srcdirs: list, outfile: str,extension:str="out"):
     global objectfiles
     objectfiles = list()
 
     writestr = ""
     writestr += "CC = " + compiler + "\n"
     writestr += "CFLAGS = " + cflags + "\n"
-    writestr += "OUT = " + outfile + ".out\n"
+    writestr += "OUT = " + outfile + f".{extension}\n"
 
     # Update this in orignal
 

@@ -2,6 +2,8 @@
 client.mk
 server.mk
 **.out
+*.exe
+*.log
 **.o
 **.h.json
 automake/HeaderFiles.json
@@ -9,4 +11,4 @@ automake/HeaderFiles.json
 
 src/fix_include
 
-compile_flags.txt
+compile_flags.txt 
