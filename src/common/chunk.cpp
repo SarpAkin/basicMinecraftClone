@@ -27,6 +27,27 @@ inline float sq(float in)
     return in * in;
 }
 
+std::vector<Vector3> Chunk::doesCollide(Transform& t)
+{
+    const auto& c = *this;
+    Vector3 ChunkRealPos = Vector3(c.pos.x * chunk_size, 0, c.pos.y * chunk_size);
+    Vector3 inChunkPos = t.pos;
+
+    std::vector<Vector3> blockColliders;
+    blockColliders.reserve((int)((t.size.x + 1) * (t.size.y + 1) * (t.size.z + 1)));
+    for (int x = std::floor(inChunkPos.x), x_end = std::ceil(inChunkPos.x + t.size.x) + 1; x < x_end; ++x)
+        for (int y = std::floor(inChunkPos.y), y_end = std::ceil(inChunkPos.y + t.size.y) + 1; y < y_end; ++y)
+            for (int z = std::floor(inChunkPos.z), z_end = std::ceil(inChunkPos.z + t.size.z) + 1; z < z_end; ++z)
+            {
+                if (c[{x, y, z}] != air)
+                {
+                    blockColliders.emplace_back(x,y,z);
+                }
+            }
+    
+    return blockColliders;
+}
+
 bool Chunk::RayCast(Vector3 start, Vector3 end, Vector3Int& hitTile, Vector3Int& facing)
 {
 
@@ -34,6 +55,14 @@ bool Chunk::RayCast(Vector3 start, Vector3 end, Vector3Int& hitTile, Vector3Int&
     end += Vector3(.5f, .5f, .5f);   // add .5 to all axises since tiles borders range form .5 to -.5
 
     Vector3 dir = glm::normalize(end - start);
+
+    // if an axis is 0 function stucks in an infinite loop
+    if (dir.x == 0.0f)
+        dir.x = 0.00001f;
+    if (dir.y == 0.0f)
+        dir.y = 0.00001f;
+    if (dir.z == 0.0f)
+        dir.z = 0.00001f;
 
     Vector3Int startTilePos = (Vector3Int)(start);
 

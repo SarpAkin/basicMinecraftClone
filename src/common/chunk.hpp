@@ -161,6 +161,7 @@ public:
 
     // positions should be relative to chunk pos
     bool RayCast(Vector3 start, Vector3 end, Vector3Int& hitTile, Vector3Int& facing);
+    std::vector<Vector3> doesCollide(Transform& t);
 
     inline static Vector2Int ToChunkCord(Vector2Int in)
     {

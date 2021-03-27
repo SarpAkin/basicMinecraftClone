@@ -136,9 +136,9 @@ void S_game::OnClientJoin(Client& c)
     auto ent = std::make_unique<Entity>();
     ent->transform.pos = {8, 0, 8};
     // find the first air block available
-    for (int i = 0; i < max_block_height; ++i)
+    for (int i = max_block_height - 1; i >= 0; --i)
     {
-        if ((Tile)spawnChunk[{ent->transform.pos.x, i, ent->transform.pos.z}] == air)
+        if ((Tile)spawnChunk[{ent->transform.pos.x, i, ent->transform.pos.z}] != air)
         {
             ent->transform.pos.y = i + 2;
             break;

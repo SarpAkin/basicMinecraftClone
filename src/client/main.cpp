@@ -90,11 +90,28 @@ public:
             if (pChunk.RayCast(pPos, pPos + (DirVector * 20.0f), hitPos, facing))
             {
                 auto hitBlock = pChunk[hitPos + facing];
-                game.PlaceBlock(hitBlock, sand);
+                if (hitBlock.pos.y < max_block_height && hitBlock.pos.y >= 0)
+                {
+                    Transform blockT;
+                    blockT.pos = (Vector3)hitBlock.pos - Vector3(.5f, .5f, .5f);
+                    blockT.size = Vector3(1, 1, 1);
+                    if (!AABBCheck(player->transform, blockT))
+                        game.PlaceBlock(hitBlock, sand);
+                }
             }
         };
 
         OnKey_Press_Funcs[GLFW_KEY_ESCAPE] = [this]() { UnlockCursor(); };
+
+        OnKey_Press_Funcs[GLFW_KEY_SPACE] = [this]() {
+            Chunk& pChunk = *(player->currentChunk);
+            Transform t;
+            t = player->transform;
+            t.pos.y -= .2f;
+            t.size.y = .2f;
+            if (pChunk.doesCollide(t).size())
+                player->transform.velocity.y += 10;
+        };
     }
 
     void UpdateCamera(double DeltaT)
@@ -123,10 +140,6 @@ public:
             MoveVector.x += 1;
         if (keyMap[GLFW_KEY_S])
             MoveVector.x -= 1;
-        if (keyMap[GLFW_KEY_SPACE])
-            viewPos.velocity += 1;
-        if (keyMap[GLFW_KEY_LEFT_CONTROL])
-            MoveVector.y -= 1;
 
         Vector2 v2 = rotateVectorIndegrees(Vector2(MoveVector.x, MoveVector.z), yaw);
         if (v2.x != 0 && v2.y != 0)
@@ -165,7 +178,7 @@ public:
 
 int main()
 {
-    std::cout << std::hex << glGetError() << std::dec <<'\n';
+    std::cout << std::hex << glGetError() << std::dec << '\n';
 
     // MEASURE_TIME(std::this_thread::sleep_for(std::chrono::seconds(1)));
     {
