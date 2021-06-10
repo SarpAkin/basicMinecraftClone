@@ -9,8 +9,11 @@
 #ifndef SERVER_SIDE
 #include "../client/ChunkMeshGPU.hpp"
 #endif
+#include "../client/chunk_mesh_gen.hpp"
 
 #include "Physics.hpp"
+
+std::array<Tile, chunk_volume> Chunk::air_vertical_chunk;
 
 void Chunk::Tick(float deltaT)
 {
@@ -308,50 +311,63 @@ void Chunk::blockMeshUpdate(Vector3Int pos)
 // TODO optimze this
 ChunkMesh Chunk::GenMesh() const
 {
-    ChunkMesh mesh_;
+    ChunkMesh meshes;
     auto& this_ = (*this);
     for (int i = 0; i < vertical_chunk_count; ++i)
     {
-        VerticalChunkMesh& mesh = mesh_.meshes[i];
+        std::vector<VoxelRect>& mesh = meshes[i];
         if (grid[i] != nullptr)
         {
-            mesh = VerticalChunkMesh();
-            mesh.reserverSquares(10000);
-            for (int y = 0; y < chunk_size; ++y)
+            if constexpr (1)
             {
-                int globalY = y + i * chunk_size;
-                for (int x = 0; x < chunk_size; ++x)
+                mesh = GreedyMesher::create_inner_mesh(*grid[i]);
+                GreedyMesher::append_outer_mesh(*this, i, mesh);
+            }
+            else
+            {
+                mesh.reserve(1000);
+                for (int y = 0; y < chunk_size; ++y)
                 {
-                    for (int z = 0; z < chunk_size; ++z)
+                    int globalY = y + i * chunk_size;
+                    for (int x = 0; x < chunk_size; ++x)
                     {
-                        auto tile = this_[{x, globalY, z}];
-                        auto textureID = tile.properties().TextureID;
-                        if (tile.ID)
+                        for (int z = 0; z < chunk_size; ++z)
                         {
-                            if (this_[{x, globalY + 1, z}].properties().isTransparent)
-                                mesh.addSquare({x, y, z}, direction::up, textureID);
+                            auto tile = this_[{x, globalY, z}];
+                            auto textureID = tile.properties().TextureID;
+                            if (tile.ID)
+                            {
+                                if (this_[{x, globalY + 1, z}].properties().isTransparent)
+                                    mesh.emplace_back(Vector3Int(x, y, z), Vector3Int(x, y, z), textureID,
+                                        std::integral_constant<Direction, Direction::up>());
 
-                            if (this_[{x, globalY - 1, z}].properties().isTransparent)
-                                mesh.addSquare({x, y, z}, direction::down, textureID);
+                                if (this_[{x, globalY - 1, z}].properties().isTransparent)
+                                    mesh.emplace_back(Vector3Int(x, y, z), Vector3Int(x, y, z), textureID,
+                                        std::integral_constant<Direction, Direction::down>());
 
-                            if (this_[{x, globalY, z + 1}].properties().isTransparent)
-                                mesh.addSquare({x, y, z}, direction::north, textureID);
+                                if (this_[{x, globalY, z + 1}].properties().isTransparent)
+                                    mesh.emplace_back(Vector3Int(x, y, z), Vector3Int(x, y, z), textureID,
+                                        std::integral_constant<Direction, Direction::north>());
 
-                            if (this_[{x, globalY, z - 1}].properties().isTransparent)
-                                mesh.addSquare({x, y, z}, direction::south, textureID);
+                                if (this_[{x, globalY, z - 1}].properties().isTransparent)
+                                    mesh.emplace_back(Vector3Int(x, y, z), Vector3Int(x, y, z), textureID,
+                                        std::integral_constant<Direction, Direction::south>());
 
-                            if (this_[{x + 1, globalY, z}].properties().isTransparent)
-                                mesh.addSquare({x, y, z}, direction::east, textureID);
+                                if (this_[{x + 1, globalY, z}].properties().isTransparent)
+                                    mesh.emplace_back(Vector3Int(x, y, z), Vector3Int(x, y, z), textureID,
+                                        std::integral_constant<Direction, Direction::east>());
 
-                            if (this_[{x - 1, globalY, z}].properties().isTransparent)
-                                mesh.addSquare({x, y, z}, direction::west, textureID);
+                                if (this_[{x - 1, globalY, z}].properties().isTransparent)
+                                    mesh.emplace_back(Vector3Int(x, y, z), Vector3Int(x, y, z), textureID,
+                                        std::integral_constant<Direction, Direction::west>());
+                            }
                         }
                     }
                 }
             }
         }
     }
-    return mesh_;
+    return meshes;
 }
 
 void Chunk::resetNeighbour()
@@ -442,100 +458,100 @@ inline uint32_t compress_vec3int(Vector3Int vec)
     return (vec.x << 10) | (vec.y << 5) | (vec.z);
 }
 
-void VerticalChunkMesh::addSquare(Vector3Int pos, direction facing, uint16_t textureID)
-{
-    /*
-          3____0
-         /|   /|
-        2_|__1 |
-        | 7__|_4
-        |/   |/
-        6____5
+// void VerticalChunkMesh::addSquare(Vector3Int pos, Direction facing, uint16_t textureID)
+// {
+//     /*
+//           3____0
+//          /|   /|
+//         2_|__1 |
+//         | 7__|_4
+//         |/   |/
+//         6____5
 
-        y  z
-        |/__x
-    */
+//         y  z
+//         |/__x
+//     */
 
-    // Vector3 pos = pos_;
+//     // Vector3 pos = pos_;
 
-    // TODO measeure the atlas size and divide by atlas size
-    float atlaspos = atlasTileX_Size * textureID;
-    uint16_t VertexIndex = verticies.size();
+//     // TODO measeure the atlas size and divide by atlas size
+//     float atlaspos = atlasTileX_Size * textureID;
+//     uint16_t VertexIndex = verticies.size();
 
-    uint32_t new_verticies[6];
+//     uint32_t new_verticies[6];
 
-    switch (facing)
-    {
+//     switch (facing)
+//     {
 
-    case direction::up: {
-        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
-        new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
-        new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 1, 0));
-        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 1, 0));
+//     case Direction::up: {
+//         new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
+//         new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
+//         new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 1, 0));
+//         new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 1, 0));
 
-        new_verticies[3] = new_verticies[2];
-        new_verticies[4] = new_verticies[1];
-    }
-    break;
+//         new_verticies[3] = new_verticies[2];
+//         new_verticies[4] = new_verticies[1];
+//     }
+//     break;
 
-    case direction::down: {
-        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 0, 1));
-        new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 0, 1));
-        new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 0));
-        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 0));
+//     case Direction::down: {
+//         new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 0, 1));
+//         new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 0, 1));
+//         new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 0));
+//         new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 0));
 
-        new_verticies[3] = new_verticies[2];
-        new_verticies[4] = new_verticies[1];
-    }
-    break;
+//         new_verticies[3] = new_verticies[2];
+//         new_verticies[4] = new_verticies[1];
+//     }
+//     break;
 
-    case direction::east: {
-        new_verticies[0] = compress_vec3int(pos + Vector3Int(1, 0, 1));
-        new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
-        new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 0, 0));
-        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 1, 0));
+//     case Direction::east: {
+//         new_verticies[0] = compress_vec3int(pos + Vector3Int(1, 0, 1));
+//         new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
+//         new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 0, 0));
+//         new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 1, 0));
 
-        new_verticies[3] = new_verticies[2];
-        new_verticies[4] = new_verticies[1];
-    }
-    break;
+//         new_verticies[3] = new_verticies[2];
+//         new_verticies[4] = new_verticies[1];
+//     }
+//     break;
 
-    case direction::west: {
-        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 0, 1));
-        new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 1, 1));
-        new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 0));
-        new_verticies[5] = compress_vec3int(pos + Vector3Int(0, 1, 0));
+//     case Direction::west: {
+//         new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 0, 1));
+//         new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 1, 1));
+//         new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 0));
+//         new_verticies[5] = compress_vec3int(pos + Vector3Int(0, 1, 0));
 
-        new_verticies[3] = new_verticies[2];
-        new_verticies[4] = new_verticies[1];
-    }
-    break;
+//         new_verticies[3] = new_verticies[2];
+//         new_verticies[4] = new_verticies[1];
+//     }
+//     break;
 
-    case direction::north: {
-        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
-        new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
-        new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 0, 1));
-        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 1));
+//     case Direction::north: {
+//         new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
+//         new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
+//         new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 0, 1));
+//         new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 1));
 
-        new_verticies[3] = new_verticies[2];
-        new_verticies[4] = new_verticies[1];
-    }
-    break;
+//         new_verticies[3] = new_verticies[2];
+//         new_verticies[4] = new_verticies[1];
+//     }
+//     break;
 
-    case direction::south: {
-        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
-        new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 1, 1));
-        new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 1));
-        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 1));
+//     case Direction::south: {
+//         new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
+//         new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 1, 1));
+//         new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 1));
+//         new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 1));
 
-        new_verticies[3] = new_verticies[2];
-        new_verticies[4] = new_verticies[1];
-    }
-    break;
-    }
+//         new_verticies[3] = new_verticies[2];
+//         new_verticies[4] = new_verticies[1];
+//     }
+//     break;
+//     }
 
-    verticies.insert(verticies.end(), new_verticies, new_verticies + 6);
-}
+//     verticies.insert(verticies.end(), new_verticies, new_verticies + 6);
+// }
 
 void Chunk::TileRef::operator=(Tile tile)
 {

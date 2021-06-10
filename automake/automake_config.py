@@ -6,6 +6,8 @@ shared_src = ["src/common","vendor/vendorCompiled"]
 
 debug_cflags = "-D_GLIBCXX_DEBUG -g -DDEBUG"
 
+debug_cflags = ""
+
 opengl_flags = "-lGL -lGLU -lglfw3 -lX11 -lXxf86vm -lXrandr -lXi -ldl -lXinerama -lXcursor -DGLEW_STATIC /usr/lib64/libGLEW.a"
 
 c_include_flags = "-Ivendor -Ivendor_git/asio/asio/include -Ivendor_git/mingw-std-threads -Ivendor_git/glm -Ivendor_git/glew/include -Ivendor_git/glfw/include"

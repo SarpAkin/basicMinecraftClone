@@ -1,23 +1,25 @@
 #include "ChunkMeshGPU.hpp"
 
+#include "chunk_mesh_gen.hpp"
 #include "render/renderer.hpp"
 
 #include "../common/utility.hpp"
+
 #include <glm/ext/matrix_transform.hpp>
 
 VertexBufferLayout ChunkMeshGPU::vlayout;
 Shader ChunkMeshGPU::chunkShader;
 Texture ChunkMeshGPU::atlas;
 
-void ChunkMeshGPU::Construct(ChunkMesh& mesh)
+void ChunkMeshGPU::Construct(ChunkMesh& meshes)
 {
 
     for (int i = 0; i < vertical_chunk_count; ++i)
     {
-        if (mesh.meshes[i].verticies.size())
+        if (meshes[i].size())
         {
             buffers.push_back(
-                {VertexBuffer(mesh.meshes[i].verticies, vlayout), i,mesh.meshes[i].verticies.size()});
+                {VertexBuffer(meshes[i], vlayout), i,meshes[i].size() * 6});
         }
     }
 }

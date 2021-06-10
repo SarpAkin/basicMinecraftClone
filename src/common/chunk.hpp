@@ -14,24 +14,26 @@
 #include "utility.hpp"
 #include "vectors.hpp"
 
-const int chunk_size = 16;
+const int chunk_size = 32;
 const int chunk_area = chunk_size * chunk_size;
 const int chunk_volume = chunk_area * chunk_size;
 
 const int vertical_chunk_count = 16;
 const int max_block_height = chunk_size * vertical_chunk_count;
 
-enum class direction : uint8_t
+enum Direction : uint8_t
 {
     up,
     down,
     north,
     south,
-    west,
-    east
+    east,
+    west
 };
 
-struct ChunkVertex
+class GreedyMesher;
+
+    struct ChunkVertex
 {
     Vector3 pos;
     Vector2 textpos;
@@ -47,21 +49,8 @@ struct ChunkVertex
     }
 };
 
-struct VerticalChunkMesh
-{
-    std::vector<uint32_t> verticies;
-    void addSquare(Vector3Int pos, direction facing, uint16_t textureID);
-
-    inline void reserverSquares(size_t amount)
-    {
-        verticies.reserve(amount * 6);
-    }
-};
-
-struct ChunkMesh
-{
-    std::array<VerticalChunkMesh, vertical_chunk_count> meshes;
-};
+struct VoxelRect;
+using ChunkMesh = std::array<std::vector<VoxelRect>, vertical_chunk_count>;
 
 class ChunkMeshGPU;
 class TGen;
@@ -77,16 +66,20 @@ class Chunk
 {
     friend TGen;
     friend Game;
+    friend GreedyMesher;
 public:
+    static std::array<Tile, chunk_volume> air_vertical_chunk;
+
     class TileRef
     {
         friend Chunk;
+
     public:
         const Vector3Int pos;
         Chunk& chunk;
 
     private:
-        inline TileRef(Chunk& c, Vector3Int p) : pos(p),chunk(c)
+        inline TileRef(Chunk& c, Vector3Int p) : pos(p), chunk(c)
         {
         }
 

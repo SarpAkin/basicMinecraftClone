@@ -41,6 +41,8 @@ class TestRen : public Renderer
     float yaw = 0;
     const float speed = 10.0f;
 
+    bool wireframe = false;
+
 public:
     TestRen() : Renderer(), game(30020, "127.0.0.1")
     {
@@ -54,8 +56,9 @@ public:
 
     void OnStart() override
     {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        // glCullFace(GL_BACK);
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        GLCALL(glEnable(GL_CULL_FACE));
+        GLCALL(glCullFace(GL_BACK));
 
         auto player_ = std::make_unique<Entity>();
         player_->transform = Transform({.5f, .0f, .5f}, {.8f, 2.0f, .8f});
@@ -105,6 +108,19 @@ public:
         };
 
         OnKey_Press_Funcs[GLFW_KEY_ESCAPE] = [this]() { UnlockCursor(); };
+
+        OnKey_Press_Funcs[GLFW_KEY_Y] = [this]() {
+            if (wireframe)
+            {
+                wireframe = false;
+                GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+            }
+            else
+            {
+                wireframe = true;
+                GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+            }
+        };
 
         OnKey_Press_Funcs[GLFW_KEY_SPACE] = [this]() {
             Chunk& pChunk = *(player->currentChunk);

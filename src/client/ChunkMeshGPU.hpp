@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "../common/chunk.hpp"
+#include "chunk_mesh_gen.hpp"
 
 #include "render/IndexBuffer.hpp"
 #include "render/VertexBuffer.hpp"
@@ -36,7 +37,7 @@ public:
 
     inline ChunkMeshGPU(Chunk& c)
     {
-        auto mesh = c.GenMesh();
+        MEASURE_TIME(auto mesh = c.GenMesh());
         pos = c.getPos();
         Construct(mesh);
     }

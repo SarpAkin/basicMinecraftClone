@@ -75,25 +75,25 @@ void Entity::InitMesh()
 
         //x+
         Vector3(x_b_p, y_b_p, z_b_p),//0
-        Vector3(x_b_p, y_b_p, z_b_n),//1
-        Vector3(x_b_p, y_b_n, z_b_n),//2
         Vector3(x_b_p, y_b_n, z_b_p),//3
+        Vector3(x_b_p, y_b_n, z_b_n),//2
+        Vector3(x_b_p, y_b_p, z_b_n),//1
         //x-
         Vector3(x_b_n, y_b_p, z_b_p),//0
-        Vector3(x_b_n, y_b_n, z_b_p),//3
-        Vector3(x_b_n, y_b_n, z_b_n),//2
         Vector3(x_b_n, y_b_p, z_b_n),//1
+        Vector3(x_b_n, y_b_n, z_b_n),//2
+        Vector3(x_b_n, y_b_n, z_b_p),//3
 
         //z+
         Vector3(x_b_p, y_b_p, z_b_p),//0
-        Vector3(x_b_p, y_b_n, z_b_p),//1
-        Vector3(x_b_n, y_b_n, z_b_p),//2
         Vector3(x_b_n, y_b_p, z_b_p),//3
+        Vector3(x_b_n, y_b_n, z_b_p),//2
+        Vector3(x_b_p, y_b_n, z_b_p),//1
         //z-
         Vector3(x_b_p, y_b_p, z_b_n),//0
-        Vector3(x_b_n, y_b_p, z_b_n),//3
-        Vector3(x_b_n, y_b_n, z_b_n),//2
         Vector3(x_b_p, y_b_n, z_b_n),//1
+        Vector3(x_b_n, y_b_n, z_b_n),//2
+        Vector3(x_b_n, y_b_p, z_b_n),//3
 
     };
     // clang-format on
