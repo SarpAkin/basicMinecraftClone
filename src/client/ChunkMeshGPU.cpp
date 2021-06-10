@@ -17,7 +17,7 @@ void ChunkMeshGPU::Construct(ChunkMesh& mesh)
         if (mesh.meshes[i].verticies.size())
         {
             buffers.push_back(
-                {IndexBuffer(mesh.meshes[i].indicies), VertexBuffer(mesh.meshes[i].verticies, vlayout), i});
+                {VertexBuffer(mesh.meshes[i].verticies, vlayout), i,mesh.meshes[i].verticies.size()});
         }
     }
 }
@@ -26,8 +26,7 @@ void ChunkMeshGPU::staticInit()
 {
     chunkShader = Shader(readFile("res/shaders/vertex.glsl"), readFile("res/shaders/fragment.glsl"));
 
-    vlayout.Push<float>(3);
-    vlayout.Push<float>(2);
+    vlayout.Push<uint32_t>(1);
 
     atlas = Texture("res/textures/tileatlas.png");
     atlas.Bind(0);
@@ -46,8 +45,9 @@ void ChunkMeshGPU::Draw(Mat4x4 mvp, Chunk& c, Vector2Int pos_, Renderer& r)
                                Vector3(pos_.x * chunk_size, b.height * chunk_size, pos_.y * chunk_size));
         chunkShader.SetUniformMat4("u_MVP", c_mvp);
         b.vb.Bind();
-        b.ib.Bind();
-        GLCALL(glDrawElements(GL_TRIANGLES, b.ib.size / sizeof(uint16_t), GL_UNSIGNED_SHORT, nullptr));
+        GLCALL(glDrawArrays(GL_TRIANGLES,0,b.vert_count));
+
+        
     }
     auto c_mvp = mvp * glm::translate(Mat4x4(1.0f), Vector3(pos_.x * chunk_size, 0, pos_.y * chunk_size));
     for (auto& e : c.Entities)

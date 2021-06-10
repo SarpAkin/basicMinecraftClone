@@ -54,6 +54,9 @@ public:
 
     void OnStart() override
     {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // glCullFace(GL_BACK);
+
         auto player_ = std::make_unique<Entity>();
         player_->transform = Transform({.5f, .0f, .5f}, {.8f, 2.0f, .8f});
         Transform& viewPos = player_->transform;

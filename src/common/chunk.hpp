@@ -49,14 +49,12 @@ struct ChunkVertex
 
 struct VerticalChunkMesh
 {
-    std::vector<ChunkVertex> verticies = std::vector<ChunkVertex>(0);
-    std::vector<uint16_t> indicies = std::vector<uint16_t>(0);
+    std::vector<uint32_t> verticies;
     void addSquare(Vector3Int pos, direction facing, uint16_t textureID);
 
     inline void reserverSquares(size_t amount)
     {
-        verticies.reserve(amount * 4);
-        indicies.reserve(amount * 6);
+        verticies.reserve(amount * 6);
     }
 };
 

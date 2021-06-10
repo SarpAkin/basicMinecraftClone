@@ -18,9 +18,9 @@ class ChunkMeshGPU
 {
     struct Buffers
     {
-        IndexBuffer ib;
         VertexBuffer vb;
         int height;
+        size_t vert_count;
     };
     std::vector<Buffers> buffers;
     Vector2Int pos;

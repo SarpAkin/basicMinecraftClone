@@ -41,10 +41,10 @@ std::vector<Vector3> Chunk::doesCollide(Transform& t)
             {
                 if (c[{x, y, z}] != air)
                 {
-                    blockColliders.emplace_back(x,y,z);
+                    blockColliders.emplace_back(x, y, z);
                 }
             }
-    
+
     return blockColliders;
 }
 
@@ -315,6 +315,7 @@ ChunkMesh Chunk::GenMesh() const
         VerticalChunkMesh& mesh = mesh_.meshes[i];
         if (grid[i] != nullptr)
         {
+            mesh = VerticalChunkMesh();
             mesh.reserverSquares(10000);
             for (int y = 0; y < chunk_size; ++y)
             {
@@ -436,7 +437,12 @@ const int atlasY_size = 1;
 const float atlasTileX_Size = 1.0f / atlasX_size;
 const float atlasTileY_Size = 1.0f / atlasY_size;
 
-void VerticalChunkMesh::addSquare(Vector3Int pos_, direction facing, uint16_t textureID)
+inline uint32_t compress_vec3int(Vector3Int vec)
+{
+    return (vec.x << 10) | (vec.y << 5) | (vec.z);
+}
+
+void VerticalChunkMesh::addSquare(Vector3Int pos, direction facing, uint16_t textureID)
 {
     /*
           3____0
@@ -450,63 +456,85 @@ void VerticalChunkMesh::addSquare(Vector3Int pos_, direction facing, uint16_t te
         |/__x
     */
 
-    Vector3 pos = pos_;
+    // Vector3 pos = pos_;
 
     // TODO measeure the atlas size and divide by atlas size
     float atlaspos = atlasTileX_Size * textureID;
     uint16_t VertexIndex = verticies.size();
+
+    uint32_t new_verticies[6];
+
     switch (facing)
     {
 
-    case direction::up:
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1)); // 1
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0)); // 2
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(atlaspos, 0));                   // 3
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(atlaspos, 1));                   // 4
-        break;
+    case direction::up: {
+        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
+        new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
+        new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 1, 0));
+        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 1, 0));
 
-    case direction::down:
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(atlaspos, 1));                   // 4
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(atlaspos, 0));                   // 3
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0)); // 2
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1)); // 1
-        break;
-
-    case direction::east:
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(atlaspos, 1));                   // 4
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(atlaspos, 0));                   // 3
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0)); // 2
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1)); // 1
-        break;
-
-    case direction::west:
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1)); // 1
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0)); // 2
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(atlaspos, 0));                   // 3
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(atlaspos, 1));                   // 4
-        break;
-
-    case direction::north:
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 1)); // 1
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, 0.5f), Vector2(atlaspos + atlasTileX_Size, 0)); // 2
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, 0.5f), Vector2(atlaspos, 0));                   // 3
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, 0.5f), Vector2(atlaspos, 1));                   // 4
-        break;
-
-    case direction::south:
-        verticies.emplace_back(pos + Vector3(-.5f, 0.5f, -.5f), Vector2(atlaspos, 1));                   // 4
-        verticies.emplace_back(pos + Vector3(-.5f, -.5f, -.5f), Vector2(atlaspos, 0));                   // 3
-        verticies.emplace_back(pos + Vector3(0.5f, -.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 0)); // 2
-        verticies.emplace_back(pos + Vector3(0.5f, 0.5f, -.5f), Vector2(atlaspos + atlasTileX_Size, 1)); // 1
-        break;
+        new_verticies[3] = new_verticies[2];
+        new_verticies[4] = new_verticies[1];
     }
-    indicies.push_back(VertexIndex + 0);
-    indicies.push_back(VertexIndex + 1);
-    indicies.push_back(VertexIndex + 3);
+    break;
 
-    indicies.push_back(VertexIndex + 1);
-    indicies.push_back(VertexIndex + 2);
-    indicies.push_back(VertexIndex + 3);
+    case direction::down: {
+        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 0, 1));
+        new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 0, 1));
+        new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 0));
+        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 0));
+
+        new_verticies[3] = new_verticies[2];
+        new_verticies[4] = new_verticies[1];
+    }
+    break;
+
+    case direction::east: {
+        new_verticies[0] = compress_vec3int(pos + Vector3Int(1, 0, 1));
+        new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
+        new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 0, 0));
+        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 1, 0));
+
+        new_verticies[3] = new_verticies[2];
+        new_verticies[4] = new_verticies[1];
+    }
+    break;
+
+    case direction::west: {
+        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 0, 1));
+        new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 1, 1));
+        new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 0));
+        new_verticies[5] = compress_vec3int(pos + Vector3Int(0, 1, 0));
+
+        new_verticies[3] = new_verticies[2];
+        new_verticies[4] = new_verticies[1];
+    }
+    break;
+
+    case direction::north: {
+        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
+        new_verticies[1] = compress_vec3int(pos + Vector3Int(1, 1, 1));
+        new_verticies[2] = compress_vec3int(pos + Vector3Int(0, 0, 1));
+        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 1));
+
+        new_verticies[3] = new_verticies[2];
+        new_verticies[4] = new_verticies[1];
+    }
+    break;
+
+    case direction::south: {
+        new_verticies[0] = compress_vec3int(pos + Vector3Int(0, 1, 1));
+        new_verticies[2] = compress_vec3int(pos + Vector3Int(1, 1, 1));
+        new_verticies[1] = compress_vec3int(pos + Vector3Int(0, 0, 1));
+        new_verticies[5] = compress_vec3int(pos + Vector3Int(1, 0, 1));
+
+        new_verticies[3] = new_verticies[2];
+        new_verticies[4] = new_verticies[1];
+    }
+    break;
+    }
+
+    verticies.insert(verticies.end(), new_verticies, new_verticies + 6);
 }
 
 void Chunk::TileRef::operator=(Tile tile)
