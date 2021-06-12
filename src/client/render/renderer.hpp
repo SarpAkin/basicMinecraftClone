@@ -8,8 +8,10 @@
 #include <memory>
 #include <unordered_map>
 
-#include "opengl_.hpp"
 
+#include "../../common/vectors.hpp"
+
+#include "opengl_.hpp"
 #include "IndexBuffer.hpp"
 #include "VertexArray.hpp"
 #include "VertexBuffer.hpp"
@@ -36,6 +38,7 @@ protected:
     std::unordered_map<int,std::function<void()>> OnMB_Press_Funcs;
     std::unordered_map<int,std::function<void()>> OnKey_Press_Funcs;
 
+    Vector4 clear_color = {0.0f,0.0f,0.0f,1.0f};
 public:
     double MouseXRaw;
     double MouseYRaw;

@@ -100,7 +100,8 @@ uint32_t CompileShader(const std::string& sourceCode, uint32_t ShaderType)
         GLCALL(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &lenght));
         auto message = std::make_unique<char>(lenght);
         GLCALL(glGetShaderInfoLog(id, lenght, &lenght, message.get()));
-        std::cout << "failed to compile!" << std::endl;
+        std::cout << "failed to compile " << ShaderType << (ShaderType == GL_FRAGMENT_SHADER ? "fragment" : "vertex")
+                  << "!" << std::endl;
         std::cout << message.get() << std::endl;
         exit(EXIT_FAILURE);
     }

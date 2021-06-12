@@ -1,10 +1,10 @@
 import automake
 
 compiler = "clang++"
-cflags = "-std=c++20 -O3 -Wall -Wno-unused-command-line-argument -Wno-unused-variable -lpthread"
+cflags = "-std=c++20 -O3 -g -Wall -Wno-unused-command-line-argument -Wno-unused-variable -lpthread"
 shared_src = ["src/common","vendor/vendorCompiled"]
 
-debug_cflags = "-D_GLIBCXX_DEBUG -g -DDEBUG"
+debug_cflags = "-D_GLIBCXX_DEBUG -DDEBUG"
 
 debug_cflags = ""
 

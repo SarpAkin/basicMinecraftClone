@@ -223,30 +223,30 @@ public:
 
         std::array<uint16_t, chunk_area> plane;
         std::vector<VoxelRect> mesh;
-        mesh.reserve(1000);
+        mesh.reserve(1500);
 
         for (int i = 0; i < chunk_size - 1; ++i)
         {
-            create_plane<Direction ::up>(tiles, plane, i);
-            plane_to_mesh<Direction::up>(plane, mesh, i);
+            if (create_plane<Direction ::up>(tiles, plane, i))
+                plane_to_mesh<Direction::up>(plane, mesh, i);
 
-            create_plane<Direction ::north>(tiles, plane, i);
-            plane_to_mesh<Direction::north>(plane, mesh, i);
+            if (create_plane<Direction ::north>(tiles, plane, i))
+                plane_to_mesh<Direction::north>(plane, mesh, i);
 
-            create_plane<Direction ::east>(tiles, plane, i);
-            plane_to_mesh<Direction::east>(plane, mesh, i);
+            if (create_plane<Direction ::east>(tiles, plane, i))
+                plane_to_mesh<Direction::east>(plane, mesh, i);
         }
 
         for (int i = 1; i < chunk_size; ++i)
         {
-            create_plane<Direction ::down>(tiles, plane, i);
-            plane_to_mesh<Direction::down>(plane, mesh, i);
+            if (create_plane<Direction ::down>(tiles, plane, i))
+                plane_to_mesh<Direction::down>(plane, mesh, i);
 
-            create_plane<Direction ::south>(tiles, plane, i);
-            plane_to_mesh<Direction::south>(plane, mesh, i);
+            if (create_plane<Direction ::south>(tiles, plane, i))
+                plane_to_mesh<Direction::south>(plane, mesh, i);
 
-            create_plane<Direction ::west>(tiles, plane, i);
-            plane_to_mesh<Direction::west>(plane, mesh, i);
+            if (create_plane<Direction ::west>(tiles, plane, i))
+                plane_to_mesh<Direction::west>(plane, mesh, i);
         }
 
         // std::cout << mesh.size() << '\n';
@@ -493,7 +493,7 @@ private:
     }
 
     template <Direction dir>
-    static void create_plane(const std::array<Tile, chunk_volume>& tiles, std::array<uint16_t, chunk_area>& plane,
+    static bool create_plane(const std::array<Tile, chunk_volume>& tiles, std::array<uint16_t, chunk_area>& plane,
         size_t plane_slice_index)
     {
         const ConstantVals constants = get_constants<dir>();
@@ -502,7 +502,7 @@ private:
         const int plane_x_to_chunk_offset = constants.plane_x_to_chunk_offset;
         const int plane_y_to_chunk_offset = constants.plane_y_to_chunk_offset;
 
-        // int plane_x = 0,plane_y = 0;
+        uint16_t is_all_air = 0;
 
         for (int plane_y = 0; plane_y < chunk_size; ++plane_y)
         {
@@ -511,9 +511,14 @@ private:
             for (int plane_x = 0; plane_x < chunk_size; ++plane_x)
             {
                 int tile_index = tile_offset + plane_x * plane_x_to_chunk_offset;
-                plane[plane_offset + plane_x] = tiles[tile_index].properties().TextureID *
-                                                tiles[tile_index + next_slice_offset].properties().isTransparent;
+                uint16_t tmp = tiles[tile_index].properties().TextureID *
+                               tiles[tile_index + next_slice_offset].properties().isTransparent;
+
+                plane[plane_offset + plane_x] = tmp;
+                is_all_air |= tmp;
             }
         }
+
+        return is_all_air != 0;
     }
 };

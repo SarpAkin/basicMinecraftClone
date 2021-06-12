@@ -43,6 +43,16 @@ class TestRen : public Renderer
 
     bool wireframe = false;
 
+    int selected_hotbar_slot = 0;
+    std::array<Tile, 9> hotbar = {
+        Tile::TileMap["stone"],
+        Tile::TileMap["sand"],
+        Tile::TileMap["dirt"],
+        Tile::TileMap["wood"],
+        Tile::TileMap["glass"],
+
+    };
+
 public:
     TestRen() : Renderer(), game(30020, "127.0.0.1")
     {
@@ -59,6 +69,8 @@ public:
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         GLCALL(glEnable(GL_CULL_FACE));
         GLCALL(glCullFace(GL_BACK));
+
+        clear_color = {0.3f, 0.4f, 0.8f, 1.0f};
 
         auto player_ = std::make_unique<Entity>();
         player_->transform = Transform({.5f, .0f, .5f}, {.8f, 2.0f, .8f});
@@ -88,6 +100,11 @@ public:
             }
         };
 
+        for (int i = 0; i < 9; ++i)
+        {
+            OnKey_Press_Funcs[GLFW_KEY_1 + i] = [this, i]() { selected_hotbar_slot = i; };
+        }
+
         OnMB_Press_Funcs[GLFW_MOUSE_BUTTON_RIGHT] = [this]() {
             Vector3Int hitPos;
             Vector3Int facing;
@@ -102,7 +119,7 @@ public:
                     blockT.pos = (Vector3)hitBlock.pos - Vector3(.5f, .5f, .5f);
                     blockT.size = Vector3(1, 1, 1);
                     if (!AABBCheck(player->transform, blockT))
-                        game.PlaceBlock(hitBlock, sand);
+                        game.PlaceBlock(hitBlock, hotbar[selected_hotbar_slot]);
                 }
             }
         };
@@ -126,10 +143,16 @@ public:
             Chunk& pChunk = *(player->currentChunk);
             Transform t;
             t = player->transform;
-            t.pos.y -= .2f;
-            t.size.y = .2f;
+            t.pos.y -= .02f;
+            t.size.y = .02f;
+
+            auto boundry_trim = Vector3(0.1f, 0.0f, 0.1f) * 1.0f;
+
+            t.pos += boundry_trim / 2.0f;
+            t.size -= boundry_trim;
+
             if (pChunk.doesCollide(t).size())
-                player->transform.velocity.y += 10;
+                player->transform.velocity.y += 6.5f;
         };
     }
 
@@ -197,6 +220,9 @@ public:
 
 int main()
 {
+    std::cout << std::floor(-0.5f) << '\n';
+
+
     std::cout << std::hex << glGetError() << std::dec << '\n';
 
     // MEASURE_TIME(std::this_thread::sleep_for(std::chrono::seconds(1)));

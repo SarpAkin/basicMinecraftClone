@@ -34,19 +34,22 @@ std::vector<Vector3> Chunk::doesCollide(Transform& t)
 {
     const auto& c = *this;
     Vector3 ChunkRealPos = Vector3(c.pos.x * chunk_size, 0, c.pos.y * chunk_size);
-    Vector3 inChunkPos = t.pos;
+    Vector3 inChunkPos = t.pos + Vector3(0.5f,0.5f,0.5f);
 
     std::vector<Vector3> blockColliders;
     blockColliders.reserve((int)((t.size.x + 1) * (t.size.y + 1) * (t.size.z + 1)));
-    for (int x = std::floor(inChunkPos.x), x_end = std::ceil(inChunkPos.x + t.size.x) + 1; x < x_end; ++x)
-        for (int y = std::floor(inChunkPos.y), y_end = std::ceil(inChunkPos.y + t.size.y) + 1; y < y_end; ++y)
-            for (int z = std::floor(inChunkPos.z), z_end = std::ceil(inChunkPos.z + t.size.z) + 1; z < z_end; ++z)
+    for (int x = std::floor(inChunkPos.x), x_end = std::ceil(inChunkPos.x + t.size.x); x < x_end; ++x)
+        for (int y = std::floor(inChunkPos.y), y_end = std::ceil(inChunkPos.y + t.size.y); y < y_end; ++y)
+            for (int z = std::floor(inChunkPos.z), z_end = std::ceil(inChunkPos.z + t.size.z); z < z_end; ++z)
             {
                 if (c[{x, y, z}] != air)
                 {
                     blockColliders.emplace_back(x, y, z);
                 }
             }
+
+
+    volatile int a = 0;
 
     return blockColliders;
 }
@@ -290,7 +293,8 @@ void Chunk::updateMesh()
 void Chunk::blockMeshUpdate(Vector3Int pos)
 {
     updateMesh();
-    if (pos.z == 15 && northernChunk)
+
+    if (pos.z == (chunk_size - 1) && northernChunk)
     {
         northernChunk->updateMesh();
     }
@@ -298,19 +302,21 @@ void Chunk::blockMeshUpdate(Vector3Int pos)
     {
         southernChunk->updateMesh();
     }
-    if (pos.x == 0 && westernChunk)
-    {
-        westernChunk->updateMesh();
-    }
-    else if (pos.x == 15 && easternChunk)
+    if (pos.x == (chunk_size - 1) && easternChunk)
     {
         easternChunk->updateMesh();
+    }
+    else if(pos.x == 0 && westernChunk)
+    {
+        westernChunk->updateMesh();
     }
 }
 
 // TODO optimze this
 ChunkMesh Chunk::GenMesh() const
 {
+    size_t square_count = 0;
+
     ChunkMesh meshes;
     auto& this_ = (*this);
     for (int i = 0; i < vertical_chunk_count; ++i)
@@ -325,7 +331,7 @@ ChunkMesh Chunk::GenMesh() const
             }
             else
             {
-                mesh.reserve(1000);
+                mesh.reserve(1500);
                 for (int y = 0; y < chunk_size; ++y)
                 {
                     int globalY = y + i * chunk_size;
@@ -366,7 +372,11 @@ ChunkMesh Chunk::GenMesh() const
                 }
             }
         }
+        // if (mesh.size())
+        //     std::cout << "square count : " << mesh.size() << '\n';
+        // square_count += mesh.size();
     }
+
     return meshes;
 }
 
