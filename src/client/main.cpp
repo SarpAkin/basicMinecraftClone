@@ -26,6 +26,18 @@
 #include "../common/noise.hpp"
 #include "../common/utility.hpp"
 
+struct PointLight
+{
+    Vector3 pos;
+    Vector3 col;
+};
+
+struct DirectionalLight
+{
+    Vector3 dir;
+    Vector3 col;
+};
+
 class TestRen : public Renderer
 {
 
@@ -53,6 +65,13 @@ class TestRen : public Renderer
 
     };
 
+    // shadow
+    uint32_t gBuffer;
+    uint32_t gPosition, gNormal, gAlbedoSpec;
+
+    VertexBuffer quad_vb;
+    Shader lightning_shader;
+
 public:
     TestRen() : Renderer(), game(30020, "127.0.0.1")
     {
@@ -62,11 +81,19 @@ public:
     void OnScreenResize() override
     {
         proj = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 10000.0f);
+
+        destroy_gbuffers();
+        create_gbuffers();
+
+        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
+        ChunkMeshGPU::bind_atlas();
     }
 
     void OnStart() override
     {
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        GLCALL(glDisable(GL_BLEND));
         GLCALL(glEnable(GL_CULL_FACE));
         GLCALL(glCullFace(GL_BACK));
 
@@ -154,6 +181,10 @@ public:
             if (pChunk.doesCollide(t).size())
                 player->transform.velocity.y += 6.5f;
         };
+
+        InitShadows();
+
+        ChunkMeshGPU::bind_atlas();
     }
 
     void UpdateCamera(double DeltaT)
@@ -202,6 +233,189 @@ public:
         view = glm::lookAt(viewPos.GetMidPoint(), viewPos.GetMidPoint() + DirVector, Vector3(0, 1, 0));
     }
 
+    void create_gbuffers()
+    {
+        glGenFramebuffers(1, &gBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+
+        // - position color buffer
+        glGenTextures(1, &gPosition);
+        glBindTexture(GL_TEXTURE_2D, gPosition);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+
+        // - normal color buffer
+        glGenTextures(1, &gNormal);
+        glBindTexture(GL_TEXTURE_2D, gNormal);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+
+        // - color + specular color buffer
+        glGenTextures(1, &gAlbedoSpec);
+        glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
+
+        // - tell OpenGL which color attachments we'll use (of this framebuffer) for rendering
+        uint32_t attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        glDrawBuffers(3, attachments);
+
+        // create and attach depth buffer (renderbuffer)
+        unsigned int rboDepth;
+        glGenRenderbuffers(1, &rboDepth);
+        glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+        // finally check if framebuffer is complete
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            std::cout << "Framebuffer not complete!" << std::endl;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    void destroy_gbuffers()
+    {
+        uint32_t arr[] = {gPosition, gNormal, gAlbedoSpec};
+        GLCALL(glDeleteTextures(3, arr));
+
+        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
+        GLCALL(glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w));
+        GLCALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+    }
+
+    void InitShadows()
+    {
+        create_gbuffers();
+
+            // init quad
+            VertexBufferLayout vl;
+        vl.Push<float>(3);
+        vl.Push<float>(2);
+
+        std::vector<float> verticies = {
+            -1.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+
+            -1.0f,
+            -1.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+
+            1.0f,
+            -1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+        };
+
+        quad_vb = VertexBuffer(verticies, vl);
+        lightning_shader =
+            Shader(readFile("res/shaders/deffered_light.vert"), readFile("res/shaders/deffered_light.frag"));
+    }
+
+    ~TestRen()
+    {
+        destroy_gbuffers();
+    }
+
+    void Draw(double DeltaT)
+    {
+        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
+        ChunksInRange(
+            player->currentChunk,
+            [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { ChunkMeshGPU::Draw(c, proj * view, r_pos, *this); },
+            [](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) {}, 10);
+    }
+
+    void DefferedDraw(double DeltaT)
+    {
+        // GPass
+
+        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, gBuffer));
+        GLCALL(glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w));
+        GLCALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+        auto a = ChunksInRange(
+            player->currentChunk,
+            [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { ChunkMeshGPU::DrawG(c, proj * view, r_pos, *this); },
+            [](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) {}, 10);
+
+        // lightning
+        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
+        GLCALL(glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w));
+        GLCALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+        GLCALL(glActiveTexture(GL_TEXTURE0));
+        GLCALL(glBindTexture(GL_TEXTURE_2D, gPosition));
+        GLCALL(glActiveTexture(GL_TEXTURE1));
+        GLCALL(glBindTexture(GL_TEXTURE_2D, gNormal));
+        GLCALL(glActiveTexture(GL_TEXTURE2));
+        GLCALL(glBindTexture(GL_TEXTURE_2D, gAlbedoSpec));
+
+        std::vector<PointLight> p_lights = {{player->transform.pos, {1.0f, 1.0f, 1.0f}}};
+        DirectionalLight d_light = {{0.3f, -0.7f, 0.05f}, {0.8f, 0.7f, 0.4f}};
+
+        const int max_point_light = 32;
+
+        int point_light_count = std::min((int)p_lights.size(), max_point_light);
+
+        lightning_shader.Bind();
+
+        lightning_shader.SetUniform3f("p_lights[0].pos", reinterpret_cast<glm::vec3*>(p_lights.data()),
+            point_light_count * 2);
+
+        for (int i = 0; i < point_light_count; ++i)
+        {
+            std::stringstream ss;
+            ss << "p_lights[" << i << "]";
+            lightning_shader.SetUniform3f(ss.str() + ".pos", p_lights[i].pos);
+            lightning_shader.SetUniform3f(ss.str() + ".col", p_lights[i].col);
+        }
+
+        lightning_shader.SetUniform3f("dir_light.dir", Vector3(1) - d_light.dir);
+        lightning_shader.SetUniform3f("dir_light.col", d_light.col);
+        // lightning_shader.SetUniform3f("view_pos_", player->transform.pos);
+
+        lightning_shader.SetUniform1i("gPosition", 0);
+        lightning_shader.SetUniform1i("gNormal", 1);
+        lightning_shader.SetUniform1i("gAlbedoSpec", 2);
+
+        if (wireframe)
+        {
+            GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+        }
+
+        quad_vb.Bind();
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        if (wireframe)
+        {
+            wireframe = true;
+            GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+        }
+
+    }
+
     void OnUpdate(double DeltaT) override
     {
         Transform& viewPos = player->transform;
@@ -209,21 +423,23 @@ public:
         game.Tick(DeltaT);
         UpdateCamera(DeltaT);
 
-        ChunksInRange(
-            player->currentChunk,
-            [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { ChunkMeshGPU::Draw(c, proj * view, r_pos, *this); },
-            [](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) {}, 10);
+        if (false)
+        {
+            DefferedDraw(DeltaT);
+        }
+        else
+        {
+            Draw(DeltaT);
+        }
     }
+
+   
 };
 
 #include "net/client.hpp"
 
 int main()
 {
-    std::cout << std::floor(-0.5f) << '\n';
-
-
-    std::cout << std::hex << glGetError() << std::dec << '\n';
 
     // MEASURE_TIME(std::this_thread::sleep_for(std::chrono::seconds(1)));
     {

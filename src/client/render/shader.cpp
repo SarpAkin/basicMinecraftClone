@@ -37,22 +37,32 @@ void Shader::Bind() const
     GLCALL(glUseProgram(shaderID));
 }
 
-void Shader::SetUniform4f(std::string& uniform, float v0, float v1, float v2, float v3)
+void Shader::SetUniform4f(std::string uniform, float v0, float v1, float v2, float v3)
 {
     GLCALL(glUniform4f(getUniformLocation(uniform), v0, v1, v2, v3));
 }
 
-void Shader::SetUniform1f(std::string& uniform, float v0)
+void Shader::SetUniform3f(std::string uniform, glm::vec3 v)
+{
+    GLCALL(glUniform3f(getUniformLocation(uniform), v.x,v.y,v.z));
+}
+
+void Shader::SetUniform3f(std::string uniform, glm::vec3* v,int count)
+{
+    GLCALL(glUniform3fv(getUniformLocation(uniform), count, reinterpret_cast<float*>(v) ));
+}
+
+void Shader::SetUniform1f(std::string uniform, float v0)
 {
     GLCALL(glUniform1f(getUniformLocation(uniform), v0));
 }
 
-void Shader::SetUniform1i(std::string& uniform, int v0)
+void Shader::SetUniform1i(std::string uniform, int v0)
 {
     GLCALL(glUniform1i(getUniformLocation(uniform), v0));
 }
 
-void Shader::SetUniformMat4(std::string& uniform, glm::mat4 v0)
+void Shader::SetUniformMat4(std::string uniform, glm::mat4 v0)
 {
     GLCALL(glUniformMatrix4fv(getUniformLocation(uniform), 1, GL_FALSE, &v0[0][0]));
 }
@@ -100,7 +110,7 @@ uint32_t CompileShader(const std::string& sourceCode, uint32_t ShaderType)
         GLCALL(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &lenght));
         auto message = std::make_unique<char>(lenght);
         GLCALL(glGetShaderInfoLog(id, lenght, &lenght, message.get()));
-        std::cout << "failed to compile " << ShaderType << (ShaderType == GL_FRAGMENT_SHADER ? "fragment" : "vertex")
+        std::cout << "failed to compile " << (ShaderType == GL_FRAGMENT_SHADER ? "fragment" : "vertex")
                   << "!" << std::endl;
         std::cout << message.get() << std::endl;
         exit(EXIT_FAILURE);
