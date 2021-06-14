@@ -7,10 +7,10 @@
 
 #include "../common/chunk.hpp"
 
-// this represents 6 contigiuos verticies forming an square
+// this represents 4 contigiuos verticies forming an square
 struct VoxelRect
 {
-    uint32_t m_data[6];
+    uint32_t m_data[4];
 
     // components should range between 0-31
     static inline uint32_t compress_vec3int(Vector3Int vec)
@@ -59,10 +59,8 @@ struct VoxelRect
             m_data[1] = texture_and_plane_bits | top_right_corner_bits | compress_vec3int(block_pos_end);
 
             m_data[2] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
-            m_data[5] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
+            m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
 
-            m_data[3] = m_data[2];
-            m_data[4] = m_data[1];
         }
         else if constexpr (dir == Direction::down)
         {
@@ -80,10 +78,8 @@ struct VoxelRect
             m_data[2] = texture_and_plane_bits | top_right_corner_bits | compress_vec3int(block_pos_end);
 
             m_data[1] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
-            m_data[5] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
+            m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
 
-            m_data[3] = m_data[2];
-            m_data[4] = m_data[1];
         }
         else if constexpr (dir == Direction::north)
         {
@@ -101,10 +97,8 @@ struct VoxelRect
             m_data[2] = texture_and_plane_bits | top_right_corner_bits | compress_vec3int(block_pos_end);
 
             m_data[1] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
-            m_data[5] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
+            m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
 
-            m_data[3] = m_data[2];
-            m_data[4] = m_data[1];
         }
         else if constexpr (dir == Direction::south)
         {
@@ -122,10 +116,8 @@ struct VoxelRect
             m_data[1] = texture_and_plane_bits | top_right_corner_bits | compress_vec3int(block_pos_end);
 
             m_data[2] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
-            m_data[5] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
+            m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
 
-            m_data[3] = m_data[2];
-            m_data[4] = m_data[1];
         }
         else if constexpr (dir == Direction::east)
         {
@@ -143,10 +135,8 @@ struct VoxelRect
             m_data[2] = texture_and_plane_bits | top_right_corner_bits | compress_vec3int(block_pos_end);
 
             m_data[1] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
-            m_data[5] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
+            m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
 
-            m_data[3] = m_data[2];
-            m_data[4] = m_data[1];
         }
         else if constexpr (dir == Direction::west)
         {
@@ -164,10 +154,8 @@ struct VoxelRect
             m_data[1] = texture_and_plane_bits | top_right_corner_bits | compress_vec3int(block_pos_end);
 
             m_data[2] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
-            m_data[5] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
+            m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
 
-            m_data[3] = m_data[2];
-            m_data[4] = m_data[1];
         }
         else
         {

@@ -34,7 +34,7 @@ std::vector<Vector3> Chunk::doesCollide(Transform& t)
 {
     const auto& c = *this;
     Vector3 ChunkRealPos = Vector3(c.pos.x * chunk_size, 0, c.pos.y * chunk_size);
-    Vector3 inChunkPos = t.pos + Vector3(0.5f,0.5f,0.5f);
+    Vector3 inChunkPos = t.pos + Vector3(0.5f, 0.5f, 0.5f);
 
     std::vector<Vector3> blockColliders;
     blockColliders.reserve((int)((t.size.x + 1) * (t.size.y + 1) * (t.size.z + 1)));
@@ -48,10 +48,33 @@ std::vector<Vector3> Chunk::doesCollide(Transform& t)
                 }
             }
 
-
     volatile int a = 0;
 
     return blockColliders;
+}
+
+std::vector<Vector3Int> Chunk::search_tile(Tile t)
+{
+    std::vector<Vector3Int> found_tiles;
+    found_tiles.reserve(32);
+
+    for (int i = 0; i < vertical_chunk_count; ++i)
+    {
+        if (grid[i])
+        {
+            auto& v_grid = *grid[i];
+            for (size_t index = 0; index < chunk_volume; ++index)
+            {
+                if (v_grid[index].ID == t)
+                {
+                    found_tiles.emplace_back(index % chunk_size, ((index / chunk_size) % chunk_size) + i * chunk_size,
+                        (index / chunk_area));
+                }
+            }
+        }
+    }
+
+    return found_tiles;
 }
 
 bool Chunk::RayCast(Vector3 start, Vector3 end, Vector3Int& hitTile, Vector3Int& facing)
@@ -292,6 +315,8 @@ void Chunk::updateMesh()
 
 void Chunk::blockMeshUpdate(Vector3Int pos)
 {
+    reset_light_sources();
+
     updateMesh();
 
     if (pos.z == (chunk_size - 1) && northernChunk)
@@ -306,7 +331,7 @@ void Chunk::blockMeshUpdate(Vector3Int pos)
     {
         easternChunk->updateMesh();
     }
-    else if(pos.x == 0 && westernChunk)
+    else if (pos.x == 0 && westernChunk)
     {
         westernChunk->updateMesh();
     }

@@ -30,6 +30,7 @@ struct PointLight
 {
     Vector3 pos;
     Vector3 col;
+    float range;
 };
 
 struct DirectionalLight
@@ -68,6 +69,7 @@ class TestRen : public Renderer
     // shadow
     uint32_t gBuffer;
     uint32_t gPosition, gNormal, gAlbedoSpec;
+    const int max_point_light = 32;
 
     VertexBuffer quad_vb;
     Shader lightning_shader;
@@ -294,8 +296,8 @@ public:
     {
         create_gbuffers();
 
-            // init quad
-            VertexBufferLayout vl;
+        // init quad
+        VertexBufferLayout vl;
         vl.Push<float>(3);
         vl.Push<float>(2);
 
@@ -326,8 +328,15 @@ public:
         };
 
         quad_vb = VertexBuffer(verticies, vl);
-        lightning_shader =
-            Shader(readFile("res/shaders/deffered_light.vert"), readFile("res/shaders/deffered_light.frag"));
+
+        auto frag_src = readFile("res/shaders/deffered_light.frag");
+
+        std::stringstream ss;
+        ss << "#define MAX_POINT_LIGHT_NUM " << max_point_light << '\n';
+
+        frag_src.insert(frag_src.find("\n") + 1, ss.str());
+
+        lightning_shader = Shader(readFile("res/shaders/deffered_light.vert"), std::move(frag_src));
     }
 
     ~TestRen()
@@ -353,7 +362,7 @@ public:
         GLCALL(glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w));
         GLCALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-        auto a = ChunksInRange(
+        auto tmp = ChunksInRange(
             player->currentChunk,
             [this](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) { ChunkMeshGPU::DrawG(c, proj * view, r_pos, *this); },
             [](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) {}, 10);
@@ -371,10 +380,44 @@ public:
         GLCALL(glActiveTexture(GL_TEXTURE2));
         GLCALL(glBindTexture(GL_TEXTURE_2D, gAlbedoSpec));
 
-        std::vector<PointLight> p_lights = {{player->transform.pos, {1.0f, 1.0f, 1.0f}}};
-        DirectionalLight d_light = {{0.3f, -0.7f, 0.05f}, {0.8f, 0.7f, 0.4f}};
+        std::vector<PointLight> p_lights; //= {{player->transform.pos, {1.0f, 1.0f, 1.0f}}};
+        p_lights.reserve(500);
+        DirectionalLight d_light = {{0.3f, -0.7f, 0.05f}};
 
-        const int max_point_light = 32;
+        // auto light_blocks = player->currentChunk->search_tile(Tile::TileMap["glass"]);
+
+        auto tmp_ = ChunksInRange(
+            player->currentChunk,
+            [&](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) {
+                auto& light_blocks = c.get_light_sources();
+
+                for (auto s : light_blocks)
+                {
+                    p_lights.push_back({(Vector3)(s + Vector3Int(r_pos.x * chunk_size, 0, r_pos.y * chunk_size)),
+                        Vector3(0.6f, 0.6f, 0.8f), 8.0f});
+                }
+            },
+            [&](Chunk& c, Vector2Int r_pos, Vector2Int f_pos) {}, 4);
+
+        struct
+        {
+            Vector3 player_pos;
+
+            static inline float lenghtsq(Vector3 v)
+            {
+                return v.x * v.x + v.y * v.y + v.z * v.z;
+            }
+
+            inline bool operator()(PointLight& a, PointLight& b)
+            {
+                return lenghtsq(a.pos - player_pos) < lenghtsq(b.pos - player_pos);
+            }
+        } sort_functor{player->transform.pos};
+
+        if (p_lights.size() > max_point_light)
+        {
+            std::partial_sort(p_lights.begin(), p_lights.begin() + max_point_light, p_lights.end(), sort_functor);
+        }
 
         int point_light_count = std::min((int)p_lights.size(), max_point_light);
 
@@ -389,6 +432,16 @@ public:
             ss << "p_lights[" << i << "]";
             lightning_shader.SetUniform3f(ss.str() + ".pos", p_lights[i].pos);
             lightning_shader.SetUniform3f(ss.str() + ".col", p_lights[i].col);
+            lightning_shader.SetUniform1f(ss.str() + ".range", p_lights[i].range);
+        }
+
+        for (int i = point_light_count; i < max_point_light; ++i)
+        {
+            std::stringstream ss;
+            ss << "p_lights[" << i << "]";
+            lightning_shader.SetUniform3f(ss.str() + ".pos", {0.0f, 0.0f, 0.0f});
+            lightning_shader.SetUniform3f(ss.str() + ".col", {0.0f, 0.0f, 0.0f});
+            lightning_shader.SetUniform1f(ss.str() + ".range", 0.0f);
         }
 
         lightning_shader.SetUniform3f("dir_light.dir", Vector3(1) - d_light.dir);
@@ -413,7 +466,6 @@ public:
             wireframe = true;
             GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
         }
-
     }
 
     void OnUpdate(double DeltaT) override
@@ -423,7 +475,7 @@ public:
         game.Tick(DeltaT);
         UpdateCamera(DeltaT);
 
-        if (false)
+        if (true)
         {
             DefferedDraw(DeltaT);
         }
@@ -432,8 +484,6 @@ public:
             Draw(DeltaT);
         }
     }
-
-   
 };
 
 #include "net/client.hpp"

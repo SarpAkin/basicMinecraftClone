@@ -18,13 +18,17 @@ struct DirectionalLight
 struct PointLight {
     vec3 pos;
     vec3 col;
+    float range;
 };
 
 uniform vec3 view_pos;
 
-const int max_point_light_num = 32;
 
-uniform PointLight p_lights[max_point_light_num];
+#ifndef MAX_POINT_LIGHT_NUM
+#define MAX_POINT_LIGHT_NUM 32
+#endif
+
+uniform PointLight p_lights[MAX_POINT_LIGHT_NUM];
 
 uniform DirectionalLight dir_light;
 
@@ -42,12 +46,12 @@ void main()
 
     vec3 lighting = albedo * ambiant_light;
     vec3 viewDir = normalize(view_pos - frag_pos);
-    for(int i = 0; i < max_point_light_num; i++)
+    for(int i = 0; i < MAX_POINT_LIGHT_NUM; i++)
     {
         // diffuse
         vec3 light_dir = normalize(p_lights[i].pos - frag_pos);
         vec3 diffuse = max(dot(normal, light_dir), 0.0) * albedo * p_lights[i].col;
-        lighting += diffuse;
+        lighting += diffuse * max((p_lights[i].range - length(p_lights[i].pos - frag_pos)) / p_lights[i].range,0.0);
     }
 
     {    

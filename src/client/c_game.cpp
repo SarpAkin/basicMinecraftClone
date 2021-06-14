@@ -124,7 +124,6 @@ void C_game::R_EntitySpawned(M_P_ARGS_T)
     auto e = std::make_shared<Entity>();
     if (e->Deserialize(m, this))
     {
-        std::cout << e->transform.pos.x << ' ' << e->transform.pos.y << ' ' << e->transform.pos.z << '\n';
         e->currentChunk->Entities.push_back(e);
         Entities[id] = e;
     }

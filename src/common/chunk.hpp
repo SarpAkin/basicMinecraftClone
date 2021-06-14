@@ -33,7 +33,7 @@ enum Direction : uint8_t
 
 class GreedyMesher;
 
-    struct ChunkVertex
+struct ChunkVertex
 {
     Vector3 pos;
     Vector2 textpos;
@@ -67,6 +67,7 @@ class Chunk
     friend TGen;
     friend Game;
     friend GreedyMesher;
+
 public:
     static std::array<Tile, chunk_volume> air_vertical_chunk;
 
@@ -90,6 +91,9 @@ public:
 
 private:
     std::array<std::unique_ptr<std::array<Tile, chunk_volume>>, vertical_chunk_count> grid;
+
+    std::vector<Vector3Int> light_sources;
+    bool cached_lighed_sources = false;
 
 public:
     Chunk* northernChunk = nullptr; // z+
@@ -121,6 +125,26 @@ public:
         this->pos = pos;
     }
     ~Chunk();
+
+    std::vector<Vector3Int> search_tile(Tile t);
+
+    inline void reset_light_sources()
+    {
+        light_sources = std::vector<Vector3Int>();
+        cached_lighed_sources = false;
+    }
+
+    inline const std::vector<Vector3Int>& get_light_sources()
+    {
+        if (!cached_lighed_sources)
+        {
+            light_sources = search_tile(Tile::TileMap["glass"]);
+            light_sources.shrink_to_fit();
+            cached_lighed_sources = true;
+        }
+
+        return light_sources;
+    }
 
     inline Vector2Int getPos()
     {

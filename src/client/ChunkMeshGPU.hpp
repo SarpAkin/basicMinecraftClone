@@ -21,14 +21,16 @@ class ChunkMeshGPU
     {
         VertexBuffer vb;
         int height;
-        size_t vert_count;
+        size_t quad_count;
     };
     std::vector<Buffers> buffers;
     Vector2Int pos;
     static Shader chunkShader;
     static Shader chunkShaderG;
+    static IndexBuffer shared_ib;
     static VertexBufferLayout vlayout;
     static const int atlas_slot = 5; 
+    static const size_t max_quad_size = 16000;
     static Texture atlas;
 private:
     void Construct(ChunkMesh& mesh);

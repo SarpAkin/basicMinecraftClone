@@ -4,9 +4,11 @@
 
 bool AABBCheck(Transform& c0, const Transform& c1)
 {
-    return c0.pos.x < c1.pos.x + c1.size.x && c1.pos.x < c0.pos.x + c0.size.x     // check x axis
-           && c0.pos.y < c1.pos.y + c1.size.y && c1.pos.y < c0.pos.y + c0.size.y  // check y axis
-           && c0.pos.z < c1.pos.z + c1.size.z && c1.pos.z < c0.pos.z + c0.size.z; // check z axis
+    // clang-format off
+    return c0.pos.x < (c1.pos.x + c1.size.x) && c1.pos.x < (c0.pos.x + c0.size.x)  // check x axis
+        && c0.pos.y < (c1.pos.y + c1.size.y) && c1.pos.y < (c0.pos.y + c0.size.y)  // check y axis
+        && c0.pos.z < (c1.pos.z + c1.size.z) && c1.pos.z < (c0.pos.z + c0.size.z); // check z axis
+    // clang-format on
 }
 
 void ResolveAABBCollision(Transform& current, const Transform& other)
