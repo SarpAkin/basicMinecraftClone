@@ -1,8 +1,9 @@
-#version 330 core
+#version 450 core
+
+layout(location = 0) in vec3 f_position;
 
 layout(location = 0) out vec4 color;
 
-in vec3 v_TexCord;
 
 float posToColor(float axis)
 {
@@ -11,5 +12,5 @@ float posToColor(float axis)
 
 void main()
 {
-    color = vec4(posToColor(v_TexCord.x),posToColor(v_TexCord.y),posToColor(v_TexCord.z),1);
+    color = vec4(posToColor(f_position.x),posToColor(f_position.y),posToColor(f_position.z),1);
 }

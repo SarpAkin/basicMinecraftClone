@@ -5,6 +5,7 @@
 #include <functional>
 #include <inttypes.h>
 #include <iostream>
+#include <tuple>
 #include <memory>
 #include <unordered_map>
 
@@ -60,6 +61,7 @@ struct ChunkGenData
 {
     std::array<uint16_t, chunk_area> heightmap;
     std::array<uint8_t, chunk_area> biomeMap;
+    std::vector<std::tuple<Vector3Int,Tile>> blocks_to_place;
 };
 
 class Chunk

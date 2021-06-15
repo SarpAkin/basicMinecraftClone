@@ -3,9 +3,9 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <thread>
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <thread>
 
 #include "render/IndexBuffer.hpp"
 #include "render/Texture.hpp"
@@ -66,13 +66,17 @@ class TestRen : public Renderer
 
     };
 
-    // shadow
+    // deferred
+    bool deferred_shading = true;
     uint32_t gBuffer;
     uint32_t gPosition, gNormal, gAlbedoSpec;
     const int max_point_light = 32;
 
     VertexBuffer quad_vb;
     Shader lightning_shader;
+
+    float day_lenght = 200.f;
+    float time = 0.f;
 
 public:
     TestRen() : Renderer(), game(30020, "127.0.0.1")
@@ -84,12 +88,14 @@ public:
     {
         proj = glm::perspective(glm::radians(90.0f), (float)width / (float)height, 0.1f, 10000.0f);
 
-        destroy_gbuffers();
-        create_gbuffers();
+        if (deferred_shading)
+        {
+            destroy_gbuffers();
+            create_gbuffers();
 
-        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-
-        ChunkMeshGPU::bind_atlas();
+            GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+            ChunkMeshGPU::bind_atlas();
+        }
     }
 
     void OnStart() override
@@ -167,6 +173,8 @@ public:
                 GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
             }
         };
+
+        OnKey_Press_Funcs[GLFW_KEY_G] = [this]() { deferred_shading = !deferred_shading; };
 
         OnKey_Press_Funcs[GLFW_KEY_SPACE] = [this]() {
             Chunk& pChunk = *(player->currentChunk);
@@ -382,7 +390,21 @@ public:
 
         std::vector<PointLight> p_lights; //= {{player->transform.pos, {1.0f, 1.0f, 1.0f}}};
         p_lights.reserve(500);
-        DirectionalLight d_light = {{0.3f, -0.7f, 0.05f}};
+        DirectionalLight d_light = {{0.8f,0.0f, 0.05f}, {0.7f, 0.6f, 0.25f}};
+
+        float degree_in_radians = glm::radians((time / day_lenght) * 360);
+
+        float half_day = day_lenght / 2;
+        if (time > half_day * 1.1f)
+            d_light.col *= 0;
+
+        glm::mat2x2 rot_mat = {{std::cos(degree_in_radians), std::sin(degree_in_radians)},
+            {-std::sin(degree_in_radians), std::cos(degree_in_radians)}};
+
+        Vector2 v = rot_mat * Vector2(d_light.dir.x, d_light.dir.y);
+
+        d_light.dir = glm::normalize(Vector3(v, d_light.dir.z));
+        // 3600),Vector3(1.f,0.f,1.f) ) * Vector4(d_light.dir,1.0f));
 
         // auto light_blocks = player->currentChunk->search_tile(Tile::TileMap["glass"]);
 
@@ -444,7 +466,7 @@ public:
             lightning_shader.SetUniform1f(ss.str() + ".range", 0.0f);
         }
 
-        lightning_shader.SetUniform3f("dir_light.dir", Vector3(1) - d_light.dir);
+        lightning_shader.SetUniform3f("dir_light.dir", d_light.dir);
         lightning_shader.SetUniform3f("dir_light.col", d_light.col);
         // lightning_shader.SetUniform3f("view_pos_", player->transform.pos);
 
@@ -470,12 +492,16 @@ public:
 
     void OnUpdate(double DeltaT) override
     {
+        time += DeltaT;
+        if (time > day_lenght)
+            time -= day_lenght;
+
         Transform& viewPos = player->transform;
 
         game.Tick(DeltaT);
         UpdateCamera(DeltaT);
 
-        if (true)
+        if (deferred_shading)
         {
             DefferedDraw(DeltaT);
         }

@@ -33,7 +33,7 @@ uniform PointLight p_lights[MAX_POINT_LIGHT_NUM];
 uniform DirectionalLight dir_light;
 
 
-const float ambiant_light = 0.2;
+const float ambiant_light = 0.15;
 
 
 

@@ -60,7 +60,6 @@ struct VoxelRect
 
             m_data[2] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
             m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
-
         }
         else if constexpr (dir == Direction::down)
         {
@@ -79,7 +78,6 @@ struct VoxelRect
 
             m_data[1] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
             m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
-
         }
         else if constexpr (dir == Direction::north)
         {
@@ -98,7 +96,6 @@ struct VoxelRect
 
             m_data[1] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
             m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
-
         }
         else if constexpr (dir == Direction::south)
         {
@@ -117,7 +114,6 @@ struct VoxelRect
 
             m_data[2] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
             m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
-
         }
         else if constexpr (dir == Direction::east)
         {
@@ -136,7 +132,6 @@ struct VoxelRect
 
             m_data[1] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
             m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
-
         }
         else if constexpr (dir == Direction::west)
         {
@@ -155,7 +150,6 @@ struct VoxelRect
 
             m_data[2] = texture_and_plane_bits | bottom_left_corner_bits | compress_vec3int(block_pos_start);
             m_data[3] = texture_and_plane_bits | bottom_right_corner_bits | compress_vec3int(bottom_right_pos);
-
         }
         else
         {
@@ -256,7 +250,7 @@ public:
                 if (auto& other_ptr_ = c.grid[vertical_index + 1])
                     other_ptr = other_ptr_.get();
 
-            create_outer_plane<Direction::up>(tiles, *other_ptr, plane);
+            if(create_outer_plane<Direction::up>(tiles, *other_ptr, plane))
             plane_to_mesh<Direction::up>(plane, mesh_to_append, chunk_size - 1);
         }
 
@@ -267,7 +261,7 @@ public:
                 if (auto& other_ptr_ = c.grid[vertical_index - 1])
                     other_ptr = other_ptr_.get();
 
-            create_outer_plane<Direction::down>(tiles, *other_ptr, plane);
+            if(create_outer_plane<Direction::down>(tiles, *other_ptr, plane))
             plane_to_mesh<Direction::down>(plane, mesh_to_append, 0);
         }
 
@@ -278,7 +272,7 @@ public:
                 if (auto& other_ptr_ = c.northernChunk->grid[vertical_index])
                     other_ptr = other_ptr_.get();
 
-            create_outer_plane<Direction::north>(tiles, *other_ptr, plane);
+            if(create_outer_plane<Direction::north>(tiles, *other_ptr, plane))
             plane_to_mesh<Direction::north>(plane, mesh_to_append, chunk_size - 1);
         }
 
@@ -289,7 +283,7 @@ public:
                 if (auto& other_ptr_ = c.southernChunk->grid[vertical_index])
                     other_ptr = other_ptr_.get();
 
-            create_outer_plane<Direction::south>(tiles, *other_ptr, plane);
+            if(create_outer_plane<Direction::south>(tiles, *other_ptr, plane))
             plane_to_mesh<Direction::south>(plane, mesh_to_append, 0);
         }
 
@@ -300,7 +294,7 @@ public:
                 if (auto& other_ptr_ = c.easternChunk->grid[vertical_index])
                     other_ptr = other_ptr_.get();
 
-            create_outer_plane<Direction::east>(tiles, *other_ptr, plane);
+            if(create_outer_plane<Direction::east>(tiles, *other_ptr, plane))
             plane_to_mesh<Direction::east>(plane, mesh_to_append, chunk_size - 1);
         }
 
@@ -311,7 +305,7 @@ public:
                 if (auto& other_ptr_ = c.westernChunk->grid[vertical_index])
                     other_ptr = other_ptr_.get();
 
-            create_outer_plane<Direction::west>(tiles, *other_ptr, plane);
+            if(create_outer_plane<Direction::west>(tiles, *other_ptr, plane))
             plane_to_mesh<Direction::west>(plane, mesh_to_append, 0);
         }
     }
@@ -444,7 +438,7 @@ private:
     }
 
     template <Direction dir>
-    static void create_outer_plane(const std::array<Tile, chunk_volume>& tiles,
+    static bool create_outer_plane(const std::array<Tile, chunk_volume>& tiles,
         const std::array<Tile, chunk_volume>& other_tiles, std::array<uint16_t, chunk_area>& plane)
     {
         const size_t plane_slice_index = chunk_size - 1;
@@ -457,6 +451,8 @@ private:
 
         const int slice_tile_offset = plane_slice_index * std::abs(next_slice_offset);
 
+        uint16_t is_all_air = 0;
+
         for (int plane_y = 0; plane_y < chunk_size; ++plane_y)
         {
             int tile_offset = plane_y * plane_y_to_chunk_offset;
@@ -465,19 +461,26 @@ private:
             {
                 int tile_index = tile_offset + plane_x * plane_x_to_chunk_offset;
 
+                Tile c_tile, o_tile;
                 if constexpr (dir % 2 == 0)
                 {
-                    plane[plane_offset + plane_x] = tiles[tile_index + slice_tile_offset].properties().TextureID *
-                                                    other_tiles[tile_index].properties().isTransparent;
+                    c_tile = tiles[tile_index + slice_tile_offset];
+                    o_tile = other_tiles[tile_index];
                 }
                 else
                 {
-                    plane[plane_offset + plane_x] =
-                        tiles[tile_index].properties().TextureID *
-                        other_tiles[tile_index + slice_tile_offset].properties().isTransparent;
+                    c_tile = tiles[tile_index];
+                    o_tile = other_tiles[tile_index + slice_tile_offset];
                 }
+
+                uint16_t tmp = c_tile.properties().TextureID * (o_tile.properties().isTransparent && o_tile != c_tile);
+
+                plane[plane_offset + plane_x] = tmp;
+                is_all_air |= tmp;
             }
         }
+
+        return is_all_air != 0;
     }
 
     template <Direction dir>
@@ -499,8 +502,9 @@ private:
             for (int plane_x = 0; plane_x < chunk_size; ++plane_x)
             {
                 int tile_index = tile_offset + plane_x * plane_x_to_chunk_offset;
-                uint16_t tmp = tiles[tile_index].properties().TextureID *
-                               tiles[tile_index + next_slice_offset].properties().isTransparent;
+                Tile c_tile = tiles[tile_index], o_tile = tiles[tile_index + next_slice_offset];
+
+                uint16_t tmp = c_tile.properties().TextureID * (o_tile.properties().isTransparent && o_tile != c_tile);
 
                 plane[plane_offset + plane_x] = tmp;
                 is_all_air |= tmp;

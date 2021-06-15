@@ -1,5 +1,9 @@
 #include "TGen.hpp"
 
+#include <algorithm>
+#include <chrono>
+#include <random>
+
 #include "../common/chunk.hpp"
 #include "../common/noise.hpp"
 
@@ -22,6 +26,8 @@ void TGen::GenerateChunk(Vector2Int pos)
         TGenWait.notify_one();
     }
     GenListMutex.unlock();
+
+    // std::cout << pos.x << ' ' << pos.y << '\n';
 }
 
 void TGen::GenerateChunks()
@@ -60,7 +66,9 @@ std::vector<std::unique_ptr<Chunk>> TGen::GetChunks()
     auto tmp = std::move(TGenOutChunks);
     GenListMutex.lock();
     for (auto& c : tmp)
+    {
         generatingChunks.erase(c->pos);
+    }
     GenListMutex.unlock();
     TGenOutMut.unlock();
     return tmp;
@@ -98,6 +106,43 @@ ModifyCurrent<Chunk> TGen::iterateAllBlocks(std::function<void(Tile&, Vector3Int
 void TGen::initTgen(TerrainGenerator<Chunk>& tGen)
 {
     tGen.setPos = [](Chunk& c, Vector2Int pos) { c.pos = pos; };
+
+    auto place_blocks_to_place = [](nearbyChunks<Chunk> n) -> std::unique_ptr<Chunk> {
+        auto& old_chunk = *n[1][1];
+        Vector2Int current_cpos = old_chunk.pos;
+
+        auto new_chunk = std::make_unique<Chunk>(current_cpos);
+        CreateNewChunkStage(old_chunk, *new_chunk);
+
+        for (int i = 0; i < vertical_chunk_count; ++i)
+        {
+            if (old_chunk.grid[i])
+                new_chunk->grid[i] = std::make_unique<std::array<Tile, chunk_volume>>(*old_chunk.grid[i]);
+        }
+        for (auto& n_ : n)
+            for (auto& c : n_)
+            {
+                Vector2Int boundry = (current_cpos - c->pos) * chunk_size;
+
+                Vector3Int offset = {-boundry.x, 0,-boundry.y};
+                for (auto b : c->chunkGenData->blocks_to_place)
+                {
+                    Vector3Int bpos = std::get<0>(b);
+                    // clang-format off
+                    if (bpos.x < boundry.x + chunk_size && bpos.x >= boundry.x 
+                     && bpos.z < boundry.y + chunk_size && bpos.z >= boundry.y)
+                    // clang-format on
+                    {
+                        (*new_chunk).findBlockInChunk(Vector3Int(bpos.x, bpos.y, bpos.z) + offset) = std::get<1>(b);
+                    }
+                }
+            }
+        return new_chunk;
+    };
+
+    auto permutation_table = std::make_shared<std::array<uint8_t, 256 * 256>>();
+    for (auto& num : *permutation_table)
+        num = rand();
 
     auto BiomeNoise = std::make_shared<PerlinNoise>();
     tGen.addRule([=](Chunk& c) {
@@ -369,6 +414,82 @@ void TGen::initTgen(TerrainGenerator<Chunk>& tGen)
         if ((*CaveNoise)[((Vector3d)pos) * 0.0617] > .4f)
             t = air;
     }));
+
+    uint16_t wood = Tile::TileMap["wood"];
+    uint16_t leaf = Tile::TileMap["leaf"];
+
+    auto tree_stump_rule = [wood, leaf, permutation_table](Chunk& c) {
+        for (int x = 0; x < chunk_size; ++x)
+        {
+            for (int z = 0; z < chunk_size; ++z)
+            {
+                int xz_offset = z * chunk_area + x;
+                for (int y_vert_c = vertical_chunk_count - 1; y_vert_c >= 0; --y_vert_c)
+                {
+                    if (c.grid[y_vert_c] == nullptr)
+                        continue;
+
+                    auto& grid = *c.grid[y_vert_c];
+                    for (int y = chunk_size - 1; y >= 0; --y)
+                    {
+                        if (grid[xz_offset + y * chunk_size] != air)
+                        {
+                            if (grid[xz_offset + y * chunk_size] == grass &&
+                                (*permutation_table)[(x + z * 64 + c.pos.x * 57 + c.pos.y * 103) & 0xFFFF] > 253)
+                            {
+                                // c.chunkGenData->tree_stump_poses.emplace_back(x, y, z);
+                                auto& tree_blocks = c.chunkGenData->blocks_to_place;
+
+                                int tree_height = 8;
+
+                                for (int i = 1; i < tree_height; ++i)
+                                {
+                                    tree_blocks.emplace_back(std::make_tuple(            //
+                                        Vector3Int(x, y + y_vert_c * chunk_size + i, z), //
+                                        Tile(wood)));                                    //
+                                }
+
+                                for (int x_ = -2; x_ <= 2; ++x_)
+                                    for (int y_ = 4; y_ <= tree_height + 2; ++y_)
+                                        for (int z_ = -2; z_ <= 2; ++z_)
+                                        {
+                                            if (x_ != 0 || z_ != 0 || y_ >= tree_height)
+                                            {
+                                                tree_blocks.emplace_back(std::make_tuple(
+                                                    Vector3Int(x + x_, y + y_vert_c * chunk_size + y_, z + z_),
+                                                    Tile(leaf)));
+                                            }
+                                        }
+
+                                
+                            }
+
+                            // break out of nested loop
+                            goto y_loop_exit;
+                        }
+                    }
+                }
+            y_loop_exit:;
+            }
+        }
+    };
+
+    tGen.addRule(tree_stump_rule);
+    tGen.addRule(place_blocks_to_place);
+
+    // tGen.addRule([wood, permutation_table](Chunk& c) {
+    //     for (auto& tree : c.chunkGenData->tree_stump_poses)
+    //     {
+    //         int tree_height = 4 + (*permutation_table)[tree.x + tree.y + tree.z] % 3;
+    //         if (tree_height + tree.y >= chunk_size * vertical_chunk_count)
+    //             continue;
+
+    //         for (int y = tree.y + 1; y <= tree.y + tree_height; ++y)
+    //         {
+    //             c[{tree.x, y, tree.z}] = wood;
+    //         }
+    //     }
+    // });
     /*
     tGen.addRule(
         [=](Chunk& c)
@@ -383,7 +504,10 @@ void TGen::initTgen(TerrainGenerator<Chunk>& tGen)
         }
     );*/
 
-    tGen.addRule([](Chunk& c) { c.resetNeighbour(); });
+    tGen.addRule([](Chunk& c) {
+        c.resetNeighbour();
+        c.chunkGenData = nullptr;
+    });
     // do Last
     tGen.Init();
 }
